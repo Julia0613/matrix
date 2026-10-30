@@ -209,7 +209,7 @@ window.CATALOG = [
     "name": "LEO / LEOCRISP",
     "category": "Аэрогрили",
     "dimensions": [
-      36,
+      38,
       30,
       28.5
     ],
@@ -237,7 +237,8 @@ window.CATALOG = [
     "color": "Чёрный",
     "photoOrigin": "Локальный оригинал",
     "foodVisible": true,
-    "photoEdit": "Еда добавлена за стеклом; исходный анфас 5300"
+    "photoEdit": "Еда добавлена за стеклом; исходный анфас 5300",
+    "dimensionEvidence": "Размерная схема в официальной галерее: Ш 30 × В 28,5 × Г 38 см, глубина с ручкой"
   },
   {
     "id": "2600",
@@ -342,39 +343,12 @@ window.CATALOG = [
     "foodVisible": true
   },
   {
-    "id": "5000",
-    "name": "NEGRONI",
-    "category": "Аэрогрили",
-    "dimensions": null,
-    "originalDimensions": null,
-    "url": "",
-    "verified": false,
-    "image": "assets/products/DEMIAND_DK-5000_NEGRONI_black_three-quarter_food.webp",
-    "sku": "DK-5000",
-    "review": false,
-    "crop": {
-      "x": 1.0,
-      "y": 1.0,
-      "width": 788.0,
-      "height": 850.0,
-      "sourceWidth": 789,
-      "sourceHeight": 852
-    },
-    "aspect": 0.927059,
-    "whiteBackground": false,
-    "view": "three-quarter",
-    "color": "Чёрный",
-    "photoOrigin": "Локальный оригинал",
-    "foodVisible": true,
-    "photoEdit": "Локальный оригинал с едой"
-  },
-  {
     "id": "5100",
     "name": "HARRINGTON",
     "category": "Аэрогрили",
     "dimensions": [
       35,
-      27,
+      26.5,
       33
     ],
     "originalDimensions": [
@@ -400,7 +374,8 @@ window.CATALOG = [
     "photoOrigin": "box.demiand.ru",
     "whiteBackground": true,
     "view": "front",
-    "foodVisible": true
+    "foodVisible": true,
+    "dimensionEvidence": "Размерная схема в официальной галерее: Ш 26,5 × В 33 × Г 35 см"
   },
   {
     "id": "5200",
@@ -503,16 +478,17 @@ window.CATALOG = [
     "view": "three-quarter",
     "color": "Чёрный",
     "photoOrigin": "Локальный оригинал",
-    "foodVisible": true
+    "foodVisible": true,
+    "dimensionEvidence": "Совпало в исходной матрице и локальном документе характеристик SPLIX DK-5400"
   },
   {
     "id": "DO-E1000",
     "name": "ALUXIO",
     "category": "Аэрогрили",
     "dimensions": [
-      36,
-      42,
-      43
+      43.5,
+      42.1,
+      36.5
     ],
     "originalDimensions": [
       43.5,
@@ -523,7 +499,7 @@ window.CATALOG = [
     "verified": true,
     "image": "assets/products/DEMIAND_DO-E1000_ALUXIO_black_front.webp",
     "sku": "DO-E1000",
-    "review": true,
+    "review": false,
     "crop": {
       "x": 29.28,
       "y": 93.12,
@@ -537,7 +513,8 @@ window.CATALOG = [
     "photoOrigin": "box.demiand.ru",
     "whiteBackground": true,
     "view": "front",
-    "foodVisible": true
+    "foodVisible": true,
+    "dimensionEvidence": "Размерная схема в официальной галерее ALUXIO: Ш × В × Г = 42,1 × 36,5 × 43,5 см"
   },
   {
     "id": "3100",
@@ -545,7 +522,7 @@ window.CATALOG = [
     "category": "Кофеварки",
     "dimensions": [
       29,
-      34,
+      22,
       32
     ],
     "originalDimensions": [
@@ -557,7 +534,7 @@ window.CATALOG = [
     "verified": true,
     "image": "assets/products/DEMIAND_KF-3100_LUNO_black_front.webp",
     "sku": "KF-3100",
-    "review": true,
+    "review": false,
     "aspect": 0.649197,
     "crop": {
       "x": 109.115,
@@ -571,7 +548,8 @@ window.CATALOG = [
     "view": "front",
     "color": "Чёрный",
     "photoOrigin": "Локальный оригинал",
-    "foodVisible": true
+    "foodVisible": true,
+    "dimensionEvidence": "Размерная схема в официальной галерее LUNO: Ш × В × Г = 22 × 32 × 29 см"
   },
   {
     "id": "3200",
@@ -579,7 +557,7 @@ window.CATALOG = [
     "category": "Кофеварки",
     "dimensions": [
       22,
-      32,
+      19.5,
       30
     ],
     "originalDimensions": [
@@ -591,7 +569,7 @@ window.CATALOG = [
     "verified": true,
     "image": "assets/products/DEMIAND_KF-3200_RETRO_black_front.webp",
     "sku": "KF-3200",
-    "review": true,
+    "review": false,
     "aspect": 0.643127,
     "crop": {
       "x": 140.4,
@@ -605,15 +583,16 @@ window.CATALOG = [
     "view": "front",
     "color": "Чёрный",
     "photoOrigin": "Локальный оригинал",
-    "foodVisible": true
+    "foodVisible": true,
+    "dimensionEvidence": "Размерная схема в официальной галерее RETRO: Ш × В × Г = 19,5 × 30 × 22 см"
   },
   {
     "id": "3500",
     "name": "RIVO",
     "category": "Кофеварки",
     "dimensions": [
-      21,
       30.5,
+      21,
       31.5
     ],
     "originalDimensions": [
@@ -639,15 +618,16 @@ window.CATALOG = [
     "photoOrigin": "box.demiand.ru",
     "whiteBackground": true,
     "view": "front",
-    "foodVisible": true
+    "foodVisible": true,
+    "dimensionEvidence": "Исходная матрица и карточка М.Видео: В × Ш × Г = 31,5 × 21 × 30,5 см"
   },
   {
     "id": "1200",
     "name": "DeMixi",
     "category": "Блендеры",
     "dimensions": [
-      26,
       18,
+      22,
       47
     ],
     "originalDimensions": [
@@ -673,7 +653,8 @@ window.CATALOG = [
     "photoOrigin": "box.demiand.ru",
     "whiteBackground": true,
     "view": "front",
-    "foodVisible": true
+    "foodVisible": true,
+    "dimensionEvidence": "Размерная схема в официальной галерее: передняя сторона 220 мм, боковая 180 мм, высота 470 мм"
   },
   {
     "id": "1300",

@@ -18,3 +18,13 @@
 @media(max-width:700px){.scene-bottom{grid-template-columns:1fr;gap:8px}.zoom-control{justify-content:flex-end}.scene-bottom p{min-width:0;min-height:33px}}@media(max-width:600px){.stage-scroll{height:460px}.footer-logo{width:95px}footer>span{font-size:10px}.zoom-control{gap:7px}.zoom-control .fit-button,.zoom-control .zoom-reset{padding:0 9px}}
 
 html{overflow-anchor:none}
+
+/* Company rollout: movable figure, explicit dimensions and a predictable start. */
+.scene-position-controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px 18px;padding:0 23px 13px;background:#fafafd}.figure-presets{display:flex;align-items:center;gap:10px}.position-slider{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:10px;flex:1;min-width:150px;max-width:240px}.position-slider input{width:100%;min-width:70px;accent-color:var(--red);cursor:ew-resize}.quiet-button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 10px;font-size:10px;white-space:nowrap}.quiet-button[aria-pressed="true"]{border-color:#f1bdc7;background:var(--pink);color:#a91c35}#resetSceneBtn{margin-left:auto}.scale-explainer{padding:0 23px 13px;background:#fafafd;font-size:10px;line-height:1.6;color:#7b7e8a}.human-zone{pointer-events:auto;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}.human-zone.dragging{cursor:grabbing}.human-zone img{pointer-events:none;-webkit-user-drag:none}.table-leg{z-index:3;pointer-events:none}.body-outline{display:none;position:absolute;inset:0;border:1px dashed #9ba3b2;background:#b7c0d40b;pointer-events:none}.body-outline>span{position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);padding:1px 4px;white-space:nowrap;background:#f5f5f8e8;color:#737b8b;font-size:9px;border-radius:3px}.show-outlines .body-outline{display:block}.show-outlines .device-label{top:calc(100% + 35px)}.show-outlines .device.active .body-outline{border-color:#e54a65}
+@media(max-width:700px){.scene-position-controls{padding:0 16px 12px;gap:10px 12px}.position-slider{max-width:none;flex:1;min-width:120px}.scale-explainer{padding:0 16px 12px;font-size:9px}.quiet-button{font-size:10px}.figure-presets{gap:7px}#resetSceneBtn{margin-left:auto}}
+
+.device.original-render{mix-blend-mode:normal}.device-label{background:#f4f5f8ed;border-radius:6px;padding:3px 5px}.device-image img{mask-repeat:no-repeat;-webkit-mask-repeat:no-repeat}
+
+@media(max-width:700px){.scene-position-controls>.quiet-button{padding:7px;font-size:9px}}
+
+.stage-scroll.close-view{height:640px}@media(max-width:600px){.stage-scroll.close-view{height:540px}}
