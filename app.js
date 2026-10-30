@@ -18,7 +18,7 @@ function cameraFrame(){
 const sceneBaseScale=()=>{const f=cameraFrame();return ($('stageScroll').clientHeight-28)/(f.top-f.bottom)};
 const sceneScale=()=>sceneBaseScale()*state.zoom;
 // Every page opening starts from the same example. There is no saved or shared selection.
-function resetScene(){Object.assign(state,defaultState());$('search').value='';$('sidebar').classList.remove('open');$('pickerToggle').setAttribute('aria-expanded','false');renderAll();$('stageScroll').scrollLeft=0}
+function resetScene(){clearTimeout(toast.timer);$('status').classList.remove('visible');$('status').textContent='';Object.assign(state,defaultState());$('search').value='';$('sidebar').classList.remove('open');$('pickerToggle').setAttribute('aria-expanded','false');renderAll();$('stageScroll').scrollLeft=0}
 function toast(message){$('status').textContent=message;$('status').classList.add('visible');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('status').classList.remove('visible'),4200)}
 const currentList=()=>catalog.filter(p=>(state.category==='Все'||p.category===state.category)&&(!state.search||`${p.name} ${p.id} ${p.sku} ${p.category}`.toLocaleLowerCase('ru').includes(state.search)));
 const categories=['Все','Аэрогрили','Кофеварки','Блендеры'];
@@ -207,7 +207,7 @@ $('zoomOut').addEventListener('click',()=>zoomBy(-.1));$('zoomIn').addEventListe
 $('zoomReset').addEventListener('click',()=>{state.zoom=1;renderScene();frameSelection();});
 $('fitBtn').addEventListener('click',()=>{state.camera='overview';const available=$('stageScroll').clientWidth;let zoom=1;while(zoom>.5&&sceneLayout(sceneBaseScale()*zoom).width>available+1)zoom-=.025;state.zoom=Math.max(.5,Math.round(zoom*100)/100);renderScene();$('stageScroll').scrollLeft=0;if($('stageScroll').scrollWidth>available+4)toast('Установлен минимальный масштаб. Для всех моделей используйте прокрутку.')});
 let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(renderScene,50)});
-if(window.ResizeObserver){let lastWidth=0;new ResizeObserver(entries=>{const width=entries[0].contentRect.width;if(Math.abs(width-lastWidth)>1){lastWidth=width;renderScene()}}).observe($('stageScroll'))}
+if(window.ResizeObserver){let lastWidth=0,lastHeight=0;new ResizeObserver(entries=>{const {width,height}=entries[0].contentRect;if(Math.abs(width-lastWidth)>1||Math.abs(height-lastHeight)>1){lastWidth=width;lastHeight=height;renderScene()}}).observe($('stageScroll'))}
 // Small pure helpers are exposed for catalog validation and language checks.
 window.ScaleMath={plural,countLabel,sceneLayout};
 window.addEventListener('pageshow',event=>{if(event.persisted)resetScene()});
