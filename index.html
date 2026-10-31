@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Матрица размеров DEMIAND: сравните реальные приборы друг с другом, с человеком и кухонным столом.">
 <title>DEMIAND — матрица размеров</title>
-<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=20261031-3">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=20261031-6">
 </head>
 <body>
 <a class="skip" href="#sceneTitle">Перейти к сравнению</a>
@@ -24,7 +24,8 @@
 <fieldset class="control-group"><legend>Человек</legend><div class="control-group-row"><div class="segmented" role="group" aria-label="Поза человека"><button id="standingBtn" type="button" aria-pressed="true" class="active">Стоит</button><button id="sittingBtn" type="button" aria-pressed="false">Сидит</button></div><label class="control"><span class="control-label">Рост</span><span class="number-field"><input id="humanHeight" type="number" min="145" max="205" value="170" step="1" aria-label="Рост человека, сантиметры"><span>см</span></span></label></div></fieldset>
 <fieldset class="control-group"><legend>Приборы</legend><div class="control-group-row"><div class="segmented" role="group" aria-label="Положение приборов"><button id="tableBtn" type="button" aria-pressed="true" class="active">На столе</button><button id="floorBtn" type="button" aria-pressed="false">На полу</button></div><label class="control table-control"><span class="control-label">Высота стола</span><span class="number-field"><input id="tableHeight" type="number" min="65" max="110" value="76" step="1" aria-label="Высота стола, сантиметры"><span>см</span></span></label></div></fieldset>
 </div>
-<div class="scene-caption"><p id="scaleExplainer">Человек и&nbsp;приборы показаны в&nbsp;одном масштабе.</p><span id="frontBadge" class="front-badge">Вид спереди</span></div><div class="stage-shell"><div class="stage-scroll" id="stageScroll" tabindex="0" aria-label="Масштабная сцена. Для просмотра всех приборов прокрутите вправо"><div class="stage" id="stage"></div></div></div>
+<div class="scene-caption"><p id="scaleExplainer">Человек и&nbsp;приборы показаны в&nbsp;одном масштабе.</p><span id="frontBadge" class="front-badge">Вид спереди</span></div><div class="empty-scene-notice" id="emptyScene" hidden><div><strong>С чем сравним?</strong><p>Выберите приборы в каталоге или посмотрите пример.</p></div><button type="button" id="exampleBtn">Показать пример</button></div>
+<div class="stage-shell"><div class="stage-scroll" id="stageScroll" tabindex="0" aria-label="Масштабная сцена. Для просмотра всех приборов прокрутите вправо"><div class="stage" id="stage"></div></div></div>
 <div class="scene-navigation"><label class="position-slider" for="humanPosition"><span>Положение человека</span><span class="slider-track"><span aria-hidden="true">←</span><input id="humanPosition" type="range" min="0" max="100" value="0" step="1" aria-label="Положение человека по горизонтали"><span aria-hidden="true">→</span></span></label><div class="scene-pan" id="scenePan"><span>Обзор сцены</span><button id="panLeft" class="icon-button" type="button" aria-label="Прокрутить сцену влево">←</button><button id="panRight" class="icon-button" type="button" aria-label="Прокрутить сцену вправо">→</button></div><div class="zoom-control"><button id="zoomOut" aria-label="Уменьшить масштаб" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button><button id="zoomReset" title="Вернуть масштаб 100%" type="button" aria-label="Сбросить масштаб до 100 процентов"><output id="zoomValue">100%</output></button><button id="zoomIn" aria-label="Увеличить масштаб" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button><button id="fitBtn" type="button" class="fit-button">Вписать</button></div></div><div class="scene-bottom"><p id="sceneHint">Нажмите на&nbsp;прибор, чтобы увидеть его размеры.</p><span>Нажмите на&nbsp;% для&nbsp;сброса масштаба</span></div>
 </section>
 <section class="detail-card" aria-labelledby="detailTitle" id="detailCard"><div id="detailBody"></div></section>
@@ -34,5 +35,5 @@
 </main>
 <dialog id="threeDialog" class="three-dialog" aria-label="Сравнение HARRINGTON и RIVO в 3D"><iframe id="threeFrame" title="3D-сравнение DEMIAND" allow="fullscreen" loading="lazy"></iframe></dialog>
 <div class="toast" id="status" role="status" aria-live="polite"></div>
-<script src="catalog.js?v=20261031-3"></script><script src="app.js?v=20261031-3"></script>
+<script src="catalog.js?v=20261031-6"></script><script src="app.js?v=20261031-6"></script>
 </body></html>

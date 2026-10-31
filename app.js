@@ -128,14 +128,14 @@ function renderScene(){
   const p=item.p,d=p.dimensions;
   html+=`<button class="device ${state.focus===p.id?'active':''} ${p.whiteBackground?'original-render':''}" type="button" data-id="${esc(p.id)}" aria-pressed="${state.focus===p.id}" aria-controls="detailCard" aria-label="Показать размеры ${esc(p.name)}: ширина ${fmt(d[1])}, высота ${fmt(d[2])}, глубина ${fmt(d[0])} сантиметров${p.image?'':'. Пока без фото'}" style="left:${item.x}px;bottom:${base}px;width:${item.width}px;height:${item.height}px">${p.image?productPhoto(p,'scene',item.height):'<span class="dimension-box"><span>Ожидаем<br>фото анфас</span></span>'}<span class="height-tag" aria-hidden="true"><span>${fmt(d[2])} см</span></span><span class="device-label">${esc(p.name)}<small>${esc(p.sku)}</small></span></button>`;
  }
- if(!layout.items.length)html+=`<div class="empty-scene"><strong>Поставим технику рядом?</strong>Выберите модели в каталоге и сравните их с человеком.<br><button type="button" id="exampleBtn">Показать пример</button></div>`;
+ $('emptyScene').hidden=layout.items.length>0;
  stage.innerHTML=html;
  applyScenePhotoMasks();
  bindPersonMovement(layout);
  updatePersonControls();
  viewport.scrollTop=0;
  stage.querySelectorAll('.device').forEach(b=>b.addEventListener('click',()=>{state.focus=b.dataset.id;stage.querySelectorAll('.device').forEach(d=>{const on=d.dataset.id===state.focus;d.classList.toggle('active',on);d.setAttribute('aria-pressed',String(on))});renderDetail();}));
- $('exampleBtn')?.addEventListener('click',resetScene);
+ $('exampleBtn').onclick=resetScene;
  $('frontBadge').innerHTML=layout.items.some(item=>item.p.view==='three-quarter')?'<span aria-hidden="true">◉</span> Анфас и ¾':'<span aria-hidden="true">◉</span> Вид спереди';
  const n=layout.items.length;$('selectedCount').textContent=countLabel(n);$('mobileCount').textContent=countLabel(n);
  $('zoomValue').textContent=`${Math.round(state.zoom*100)}%`;$('zoomOut').disabled=state.zoom<=.5;$('zoomIn').disabled=state.zoom>=1.5;
