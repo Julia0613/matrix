@@ -18,6 +18,9 @@ export function createKitchen(scene,renderer){
  stone.emissiveMap=stoneMap;stone.userData.marble=true;const backStone=stone.clone();backStone.color.set('#73777b');backStone.roughness=.42;backStone.clearcoat=0;backStone.envMapIntensity=.10;backStone.emissiveIntensity=.012;
  const floorMap=stoneMap.clone();floorMap.wrapS=floorMap.wrapT=THREE.RepeatWrapping;floorMap.repeat.set(3.7,3.7);floorMap.needsUpdate=true;
  const floorMat=new THREE.MeshPhysicalMaterial({color:'#79736c',map:floorMap,roughness:.94,metalness:0,envMapIntensity:.10,specularIntensity:.12}),studioMat=standard('#e7e9ee',.85);
+ // Subtle mineral variation on the honed floor keeps contact shadows legible.
+ floorMat.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\ndiffuseColor.rgb = vec3(0.035, 0.032, 0.028) + diffuseColor.rgb * 0.12;');};
+ floorMat.customProgramCacheKey=()=> 'honed-floor-v1';
  const ground=new THREE.Mesh(new THREE.PlaneGeometry(12,12),floorMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.0001;ground.receiveShadow=true;scene.add(ground);
  const grid=new THREE.GridHelper(8,32,'#c2c8d0','#d8dde5');grid.position.y=-.001;grid.material.transparent=true;grid.material.opacity=.3;scene.add(grid);
  // Only a rear wall: no front wall, side wall or ceiling can block the camera.
