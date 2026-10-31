@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from './assets/vendor/OrbitControls.js';
 import {GLTFLoader} from './assets/vendor/GLTFLoader.js';
 import {DRACOLoader} from './assets/vendor/DRACOLoader.js';
-import {createKitchen} from './3d-kitchen.js?v=20261031-9';
+import {createKitchen} from './3d-kitchen.js?v=20261031-12';
 import {EffectComposer} from './assets/vendor/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from './assets/vendor/addons/postprocessing/RenderPass.js';
 import {SSAOPass} from './assets/vendor/addons/postprocessing/SSAOPass.js';
@@ -11,15 +11,15 @@ import {OutputPass} from './assets/vendor/addons/postprocessing/OutputPass.js';
 const $=id=>document.getElementById(id),params=new URLSearchParams(location.search);
 const clamp=(v,min,max,fallback)=>Number.isFinite(Number(v))&&v!==null?Math.max(min,Math.min(max,Number(v))):fallback;
 const initial={human:clamp(params.get('human'),145,205,164),table:clamp(params.get('table'),65,110,76),place:params.get('place')==='floor'?'floor':'table'};
-const defaults=()=>({...initial,room:'kitchen',view:'perspective',personX:-1.14,show5100:true,show3500:true});
+const catalog=window.CATALOG,modelFiles=window.MODELS_3D,MAX_PRODUCTS=3;
+const products=Object.fromEntries(catalog.filter(p=>modelFiles[p.id]).map(p=>{const [depth,width,height]=p.dimensions;return[p.id,{...p,...modelFiles[p.id],width:width/100,height:height/100,depth:depth/100,x:0,z:0,label:'label'+p.id}]}));
+const requested=params.has('models')?params.get('models').split(',').filter(Boolean):null;
+const initialSelection=requested?requested.filter(id=>products[id]).slice(0,MAX_PRODUCTS):['2100','3500','1200'];
+const defaults=()=>({...initial,room:'kitchen',view:'perspective',personX:-1.14,selected:new Set(initialSelection)});
 const state=defaults();
-const products={
- '5100':{name:'HARRINGTON',height:.33,width:.265,depth:.35,path:'assets/models/harrington-5100.glb',x:-.04,z:.06,label:'label5100'},
- // The portafilter extends past the RIVO housing. Its housing depth is calibrated
- // separately; the handle remains extended and is not squeezed into that depth.
- '3500':{name:'RIVO',height:.315,width:.21,depth:.305,housingDepth:.32365,path:'assets/models/rivo-3500.glb',x:.55,z:.04,label:'label3500'}
-};
-for(const [id,p]of Object.entries(products)){const row=window.CATALOG.find(r=>r.id===id);if(row?.dimensions){const [depth,width,height]=row.dimensions;p.width=width/100;p.height=height/100;p.depth=depth/100}}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let pickerCategory='Все',pickerSearch='',selectionRevision=0,selectionTouched=false;
+const pendingLoads=new Map(),loadErrors=new Set();
 const fmt=n=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:1}).format(n);
 let renderer,scene,perspective,orthographic,camera,controls,woman,island,kitchen,studioGrid,ground,frameId,environmentTexture;
 let kitchenDesign,composer,scenePass,contactAO;
@@ -73,7 +73,7 @@ function buildKitchen(){kitchenDesign=createKitchen(scene,renderer);kitchen=kitc
 function buildIsland(){kitchenDesign.setHeight(state.table/100,state.place==='table');}
 function prepareMeshes(root){root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.isSkinnedMesh)o.frustumCulled=false;}});}
 function normalizeProduct(gltf,id){
- const config=products[id],object=gltf.scene;object.updateMatrixWorld(true);
+ const config=products[id],object=gltf.scene;if(config.rotationY)object.rotation.y+=config.rotationY;object.updateMatrixWorld(true);
  const sourceBox=new THREE.Box3().setFromObject(object,true),size=sourceBox.getSize(new THREE.Vector3());
  if(!size.x||!size.y||!size.z)throw Error('В файле отсутствует геометрия прибора.');
  object.scale.set(config.width/size.x,config.height/size.y,config.depth/(config.housingDepth||size.z));object.updateMatrixWorld(true);
@@ -91,18 +91,60 @@ function normalizeWoman(gltf){
 function syncScene(){
  $('height3d').value=state.human;$('table3d').value=state.table;$('table3d').disabled=state.place==='floor';$('table3d').closest('.field-row').style.opacity=state.place==='floor'?'.4':'1';
  for(const [id,on]of [['onTable',state.place==='table'],['onFloor',state.place==='floor'],['kitchenBtn',state.room==='kitchen'],['studioBtn',state.room==='studio']]){$(id).classList.toggle('active',on);$(id).setAttribute('aria-pressed',String(on));}
- $('show5100').checked=state.show5100;$('show3500').checked=state.show3500;$('personPosition3d').value=state.personX*100;
+ $('personPosition3d').value=state.personX*100;layoutProducts();
  if(woman){woman.scale.setScalar(state.human/100);woman.position.set(state.personX,0,-.60);woman.updateMatrixWorld(true);}
- for(const [id,object]of objects){const p=products[id];$('size'+id).textContent=[p.width*100,p.height*100,p.depth*100].map(fmt).join(' × ')+' см';$('label'+id).querySelector('span').textContent='Высота '+fmt(p.height*100)+' см';object.visible=state['show'+id];object.position.set(p.x,state.place==='table'?state.table/100:0,p.z);object.updateMatrixWorld(true);}
+ for(const [id,object]of objects){const p=products[id];object.visible=state.selected.has(id);object.position.set(p.x,state.place==='table'?state.table/100:0,p.z);object.updateMatrixWorld(true);}
+
  buildIsland();
- for(const [id,shadow]of contactShadows){if(id==='woman'){shadow.position.set(state.personX,.0003,-.60+.065*state.human/164);shadow.scale.setScalar(state.human/164);}else{const p=products[id];shadow.position.set(p.x,(state.place==='table'?state.table/100:0)+.0003,p.z);shadow.visible=state['show'+id];}}
+ for(const [id,shadow]of contactShadows){if(id==='woman'){shadow.position.set(state.personX,.0003,-.60+.065*state.human/164);shadow.scale.setScalar(state.human/164);}else{const p=products[id];shadow.position.set(p.x,(state.place==='table'?state.table/100:0)+.0003,p.z);shadow.visible=state.selected.has(id)&&objects.has(id);}}
  kitchenDesign.setEnvironment(state.room==='kitchen');
  scene.background.set(state.room==='kitchen'?'#2b2d32':'#eef0f5');$('personLabel').textContent=`Рост ${state.human} см`;
- updateMeasurementData();
+ updateMeasurementData();renderSelected();
+}
+function layoutProducts(){
+ const ids=[...state.selected],gap=ids.length>2?.16:.22,total=ids.reduce((sum,id)=>sum+products[id].width,0)+Math.max(0,ids.length-1)*gap;
+ const deepest=Math.max(0,...ids.map(id=>products[id].assembledSize?.z||products[id].depth)),front=state.place==='table'?-.40+.05+deepest:.25;
+ let left=.30-total/2;for(const id of ids){const p=products[id];p.x=left+p.width/2;p.z=front-(p.assembledSize?.z||p.depth)/2;left+=p.width+gap;}
+}
+function showSelectionNotice(message){$('selectionNotice').hidden=!message;$('selectionNotice').textContent=message;}
+function renderSelected(){
+ $('selectedCount').textContent=`${state.selected.size} из ${MAX_PRODUCTS}`;
+ $('selectedModels').innerHTML=[...state.selected].map(id=>{const p=products[id],loading=!objects.has(id)&&!loadErrors.has(id);return `<div class="selected-model"><img src="${esc(p.image)}" alt="" width="37" height="48"><div><strong>${esc(p.name)}</strong><small>${esc(p.sku)}</small><span>${[p.width*100,p.height*100,p.depth*100].map(fmt).join(' × ')} см</span>${loading?'<em>Загружаем 3D…</em>':''}</div><button type="button" data-remove="${esc(id)}" aria-label="Убрать ${esc(p.name)} со сцены">×</button></div>`}).join('')||'<p class="empty-selection">Выберите товары, чтобы поставить их на сцену.</p>';
+}
+function renderPicker(){
+ const active=document.activeElement,focusProduct=active?.dataset?.product,focusCategory=active?.dataset?.category;
+ $('productCategories').innerHTML=['Все','Аэрогрили','Кофеварки','Блендеры'].map(name=>`<button type="button" data-category="${name}" aria-pressed="${pickerCategory===name}">${name}</button>`).join('');
+ const list=catalog.filter(p=>(pickerCategory==='Все'||p.category===pickerCategory)&&(!pickerSearch||`${p.name} ${p.sku} ${p.id}`.toLocaleLowerCase('ru').includes(pickerSearch)));
+ $('pickerCount').textContent=`Выбрано ${state.selected.size} из ${MAX_PRODUCTS}`;
+ $('productList').innerHTML=list.map(p=>{const available=!!products[p.id],on=state.selected.has(p.id);return `<label class="picker-product ${available?'':'unavailable'}"><input type="checkbox" data-product="${esc(p.id)}" ${on?'checked':''} ${available?'':'disabled'}><img src="${esc(p.image)}" alt="" width="42" height="52"><span><strong>${esc(p.name)}</strong><small>${esc(p.sku)}${!available?' · 3D пока нет':''}</small><span>${[p.dimensions[1],p.dimensions[2],p.dimensions[0]].map(fmt).join(' × ')} см</span></span><i aria-hidden="true">${on?'✓':'+'}</i></label>`}).join('')||'<p class="picker-empty">По этому запросу ничего не найдено.</p>';
+ if($('productPicker').open){if(focusProduct)$('productList').querySelector(`[data-product="${CSS.escape(focusProduct)}"]`)?.focus({preventScroll:true});else if(focusCategory)$('productCategories').querySelector(`[data-category="${CSS.escape(focusCategory)}"]`)?.focus({preventScroll:true});}
+}
+async function ensureProduct(id){
+ if(objects.has(id))return;if(pendingLoads.has(id))return pendingLoads.get(id);
+ const p=products[id],promise=(async()=>{try{normalizeProduct(await loader.loadAsync(p.path),id);makeContactShadow(id,p.width*1.3,p.assembledSize.z*1.2);loadErrors.delete(id);}catch(error){loadErrors.add(id);state.selected.delete(id);console.warn('DEMIAND: model unavailable',id,error);showSelectionNotice(`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`);$('pickerStatus').textContent=`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`;}finally{pendingLoads.delete(id);syncScene();renderPicker();}})();pendingLoads.set(id,promise);return promise;
+}
+async function loadSelected(){await Promise.all([...state.selected].map(ensureProduct));}
+async function toggleProduct(id,on){
+ if(!products[id])return;
+ if(on&&state.selected.size>=MAX_PRODUCTS&&!state.selected.has(id)){$('pickerStatus').textContent='На сцене могут стоять три прибора. Сначала уберите один из выбранных.';renderPicker();return;}
+ selectionTouched=true;on?state.selected.add(id):state.selected.delete(id);const revision=++selectionRevision;
+ $('pickerStatus').textContent='Выбранные товары сразу появляются на сцене.';showSelectionNotice('');syncScene();renderPicker();
+ if(on){await ensureProduct(id);if(disposed)return;syncScene();if(revision===selectionRevision&&state.selected.has(id))fitView(state.view);}
+}
+function bindProductPicker(){
+ $('openProductPicker').addEventListener('click',()=>{renderPicker();$('productPicker').showModal();$('productSearch').focus();});
+ const close=()=>{$('productPicker').close();$('openProductPicker').focus({preventScroll:true});};
+ $('closeProductPicker').addEventListener('click',close);$('doneProductPicker').addEventListener('click',close);
+ $('productPicker').addEventListener('click',e=>{if(e.target===$('productPicker')){const r=$('productPicker').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}});
+ $('productSearch').addEventListener('input',e=>{pickerSearch=e.target.value.toLocaleLowerCase('ru').trim();renderPicker();});
+ $('productCategories').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(b){pickerCategory=b.dataset.category;renderPicker();}});
+ $('productList').addEventListener('change',e=>{if(e.target.matches('[data-product]'))toggleProduct(e.target.dataset.product,e.target.checked);});
+ $('selectedModels').addEventListener('click',e=>{const b=e.target.closest('[data-remove]');if(b)toggleProduct(b.dataset.remove,false);});
+ if(requested){const unavailable=requested.filter(id=>!products[id]).map(id=>catalog.find(p=>p.id===id)?.name).filter(Boolean);if(unavailable.length)showSelectionNotice(`Пока без 3D: ${unavailable.join(', ')}. Их можно сравнить в обычной матрице.`);if(requested.filter(id=>products[id]).length>MAX_PRODUCTS)showSelectionNotice('Показаны первые три выбранных прибора. Остальные можно выбрать здесь.');}
 }
 function updateMeasurementData(){
  const info={human:state.human/100,table:state.table/100,place:state.place,models:{}};
- for(const [id,o]of objects){const b=new THREE.Box3().setFromObject(o,true),s=b.getSize(new THREE.Vector3());info.models[id]={visible:o.visible,width:s.x,height:s.y,assembledDepth:s.z,baseY:b.min.y,housingDepth:products[id].depth};}
+ for(const [id,o]of objects){const b=new THREE.Box3().setFromObject(o,true),s=b.getSize(new THREE.Vector3());info.models[id]={visible:o.visible,width:s.x,height:s.y,assembledDepth:s.z,baseY:b.min.y,backZ:b.min.z,frontZ:b.max.z,rearEdgeGap:state.place==='table'?b.min.z+.4:null,housingDepth:products[id].depth};}
  if(woman){const box=new THREE.Box3().setFromObject(woman,true);info.person={height:box.max.y-box.min.y,width:box.max.x-box.min.x,baseY:box.min.y,x:woman.position.x};}
  canvas.dataset.measurements=JSON.stringify(info);
 }
@@ -124,24 +166,29 @@ function placeLabel(id,position,visible=true){const el=$(id);if(!visible){el.sty
 function updateLabels(){
  if(!camera)return;
  placeLabel('personLabel',new THREE.Vector3(state.personX,state.human/100+.09,-.60),!!woman);
- for(const [id,p]of Object.entries(products)){const object=objects.get(id);placeLabel(p.label,new THREE.Vector3(p.x,(state.place==='table'?state.table/100:0)+p.height+.10,p.z),object?.visible);}
- const a=$('label5100'),b=$('label3500');if(a.style.opacity==='1'&&b.style.opacity==='1'){const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();if(ar.left<br.right&&ar.right>br.left&&Math.abs(ar.top-br.top)<br.height+5)b.style.top=`${parseFloat(b.style.top)-br.height-10}px`;}
+ const placed=[];
+ for(const [id,p]of Object.entries(products)){const object=objects.get(id);placeLabel(p.label,new THREE.Vector3(p.x,(state.place==='table'?state.table/100:0)+p.height+.10,p.z),!!object?.visible);if(!object?.visible)continue;
+  const el=$(p.label);if(el.style.opacity!=='1')continue;
+  for(let attempt=0;attempt<placed.length+1;attempt++){const r=el.getBoundingClientRect(),hit=placed.find(other=>r.left<other.right+5&&r.right>other.left-5&&r.top<other.bottom+5&&r.bottom>other.top-5);if(!hit)break;el.style.top=`${parseFloat(el.style.top)-r.height-8}px`;}
+  placed.push(el.getBoundingClientRect());
+ }
 }
+
 function animate(){if(disposed)return;frameId=requestAnimationFrame(animate);controls.update();kitchenDesign.updateCamera(camera,state.room==='kitchen');composer.render();updateLabels();}
 function zoom(factor){if(camera.isOrthographicCamera){camera.zoom=Math.max(.45,Math.min(4,camera.zoom*factor));camera.updateProjectionMatrix();}else{const offset=camera.position.clone().sub(controls.target);offset.multiplyScalar(1/factor).clampLength(.7,11);camera.position.copy(controls.target).add(offset);}currentPreset='free';syncPostCamera();controls.update();updateViewButtons();}
-function back(e){if(parent!==window){e?.preventDefault();parent.postMessage({type:'demiand-close-3d',human:state.human,table:state.table,place:state.place},location.origin)}}
+function back(e){if(parent!==window){e?.preventDefault();parent.postMessage({type:'demiand-close-3d',human:state.human,table:state.table,place:state.place,models:selectionTouched?[...state.selected,...(requested||[]).filter(id=>!products[id])]:undefined},location.origin)}}
 function bindUI(){
- $('backLink').addEventListener('click',back);window.addEventListener('keydown',e=>{if(e.key==='Escape')back(e)});
+ $('backLink').addEventListener('click',back);window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('productPicker').open)back(e)});
  for(const [id,min,max,key]of [['height3d',145,205,'human'],['table3d',65,110,'table']]){
   $(id).addEventListener('input',()=>{const n=Number($(id).value);if(n>=min&&n<=max){state[key]=n;syncScene();}});
   $(id).addEventListener('change',()=>{state[key]=Math.round(clamp($(id).value,min,max,state[key]));syncScene();});
  }
- for(const id of ['5100','3500'])$('show'+id).addEventListener('change',e=>{state['show'+id]=e.target.checked;syncScene();});
+ bindProductPicker();
  for(const [id,key,value]of [['onTable','place','table'],['onFloor','place','floor'],['kitchenBtn','room','kitchen'],['studioBtn','room','studio']])$(id).addEventListener('click',()=>{state[key]=value;syncScene();});
  for(const [id,view]of [['viewPerspective','perspective'],['viewFront','front'],['viewSide','side']])$(id).addEventListener('click',()=>fitView(view));
  $('fit3d').addEventListener('click',()=>fitView(state.view));$('zoomIn3d').addEventListener('click',()=>zoom(1.18));$('zoomOut3d').addEventListener('click',()=>zoom(1/1.18));
  $('personPosition3d').addEventListener('input',e=>{state.personX=Number(e.target.value)/100;woman?.position.set(state.personX,0,-.60);contactShadows.get('woman')?.position.set(state.personX,.0003,-.60+.065*state.human/164);updateMeasurementData();});
- $('reset3d').addEventListener('click',()=>{Object.assign(state,defaults());syncScene();fitView('perspective');});
+ $('reset3d').addEventListener('click',()=>{Object.assign(state,defaults());selectionTouched=true;selectionRevision++;syncScene();renderPicker();loadSelected().then(()=>{syncScene();fitView('perspective')});});
  $('settingsToggle').addEventListener('click',()=>{const on=$('settingsToggle').getAttribute('aria-expanded')!=='true';$('settingsToggle').setAttribute('aria-expanded',String(on));$('settings').classList.toggle('open',on);});
  $('retry3d').addEventListener('click',()=>location.reload());
  if(matchMedia('(pointer:coarse)').matches)$('gestureHint').textContent='Одним пальцем — вращение · Двумя — приближение и перемещение';
@@ -149,9 +196,10 @@ function bindUI(){
 function nonBreakingCopy(){const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;while((node=walker.nextNode()))if(!/^(SCRIPT|STYLE)$/.test(node.parentElement?.tagName||''))node.nodeValue=node.nodeValue.replace(/(^|[\s(«])([ВвКкСсУуИиАа]|[Нн]е|[Пп]о|[Нн]а|[Ии]з|[Зз]а|[Дд]ля|[Оо]т|[Дд]о) +(?=[А-ЯЁа-яёA-Za-z0-9«])/gu,'$1$2\u00a0');}
 async function start(){
  try{
-  initRenderer();buildKitchen();makeContactShadow('woman',.42,.34);for(const [id,p]of Object.entries(products))makeContactShadow(id,p.width*1.3,(id==='3500'?.41:p.depth)*1.2);bindUI();nonBreakingCopy();resize();animate();
-  let completed=0;const loaded=()=>{$('loadingProgress').style.width=`${++completed/3*100}%`;$('loadingText').textContent=completed<3?'Расставляем приборы и настраиваем масштаб…':'Всё готово';};
-  await Promise.all([ kitchenDesign.ready, ...Object.entries(products).map(async([id,p])=>{normalizeProduct(await loader.loadAsync(p.path),id);loaded();}), (async()=>{normalizeWoman(await loader.loadAsync('assets/models/woman-original.glb'));loaded();})() ]);
+  initRenderer();buildKitchen();makeContactShadow('woman',.42,.34);for(const [id,p]of Object.entries(products)){const label=document.createElement('div');label.id=p.label;label.className='label product-label';label.innerHTML=`<strong>${esc(p.name)}</strong><span>Высота ${fmt(p.height*100)} см</span>`;$('sceneLabels').append(label);}bindUI();syncScene();nonBreakingCopy();resize();animate();
+  $('loadingProgress').style.width='30%';
+  await Promise.all([kitchenDesign.ready,loadSelected(),(async()=>{normalizeWoman(await loader.loadAsync('assets/models/woman-original.glb?v=20261031-12'));})()]);
+  $('loadingProgress').style.width='100%';
   syncScene();resize();fitView('perspective');$('loading').classList.add('done');$('loading').setAttribute('aria-hidden','true');setTimeout(()=>$('loading').hidden=true,450);canvas.dataset.ready='true';
   new ResizeObserver(resize).observe(wrap);
  }catch(error){console.error('DEMIAND 3D:',error);fail('Не удалось загрузить сцену. Проверьте подключение и попробуйте ещё раз.');}

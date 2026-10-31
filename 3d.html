@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DEMIAND — сравнение в 3D</title>
-<meta name="description" content="HARRINGTON 5100 и RIVO 3500 в кухне: сравнение с человеком и столешницей в общем масштабе.">
-<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="3d.css?v=20261031-9">
+<meta name="description" content="Техника DEMIAND в кухне: выбирайте товары и сравнивайте их с человеком в одном масштабе.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="3d.css?v=20261031-12">
 <script type="importmap">{"imports":{"three":"./assets/vendor/three.module.js"}}</script>
 </head>
 <body>
@@ -12,9 +12,8 @@
 <main class="app-layout">
 <aside class="settings" id="settings">
 <div class="panel-title"><div class="eyebrow">ТЕХНИКА В ПРОСТРАНСТВЕ</div><h1>Почувствуйте<br>масштаб</h1><p>Посмотрите на приборы<br>с привычной точки зрения.</p></div>
-<section class="setting-section"><h2>Что сравниваем</h2>
-<label class="model-card"><input type="checkbox" id="show5100" checked><img src="assets/products/DEMIAND_DK-5100_HARRINGTON_black_front.webp" alt="" width="42" height="48"><span><strong>HARRINGTON</strong><small>DK-5100</small><span class="size" id="size5100">26,5 × 33 × 35 см</span></span><span class="model-check" aria-hidden="true">✓</span></label>
-<label class="model-card"><input type="checkbox" id="show3500" checked><img src="assets/products/DEMIAND_KF-3500_RIVO_black_front.webp" alt="" width="42" height="48"><span><strong>RIVO</strong><small>KF-3500</small><span class="size" id="size3500">21 × 31,5 × 30,5 см</span></span><span class="model-check" aria-hidden="true">✓</span></label><p class="field-note">Ширина × высота × глубина корпуса</p>
+<section class="setting-section selection-section"><div class="section-heading"><h2>На сцене</h2><span id="selectedCount">2 из 3</span></div>
+<div id="selectedModels"></div><button class="add-product" type="button" id="openProductPicker"><span aria-hidden="true">+</span> Выбрать товары</button><p class="field-note">До трёх приборов одновременно.<br>Ширина × высота × глубина корпуса.</p><p class="selection-notice" id="selectionNotice" role="status" hidden></p>
 </section>
 <section class="setting-section"><h2>Человек и стол</h2><label class="field-row"><span>Рост человека</span><span class="number"><input id="height3d" type="number" min="145" max="205" step="1" value="164" aria-label="Рост человека, сантиметры"><span>см</span></span></label>
 <div class="segments" role="group" aria-label="Положение приборов"><button id="onTable" class="active" type="button" aria-pressed="true">На столе</button><button id="onFloor" type="button" aria-pressed="false">На полу</button></div>
@@ -26,7 +25,7 @@
 </aside>
 <section class="scene-area" id="sceneArea" aria-label="Сцена сравнения">
 <div class="scene-top"><div class="view-buttons" role="group" aria-label="Ракурс камеры"><button id="viewPerspective" class="active" type="button" aria-pressed="true">Объём</button><button id="viewFront" type="button" aria-pressed="false">Спереди</button><button id="viewSide" type="button" aria-pressed="false">Сбоку</button></div><button class="settings-toggle" id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">Настройки <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><span class="scale-note"><i></i> Общий масштаб</span></div>
-<div class="canvas-wrap" id="canvasWrap"><canvas id="sceneCanvas" tabindex="0" aria-label="3D-сцена. Перетаскивайте для вращения, используйте колесо для приближения. Стрелки перемещают камеру."></canvas><div class="scene-labels" id="sceneLabels" aria-hidden="true"><div id="personLabel" class="label person-label"></div><div id="label5100" class="label product-label"><strong>HARRINGTON</strong><span>Высота 33 см</span></div><div id="label3500" class="label product-label"><strong>RIVO</strong><span>Высота 31,5 см</span></div></div>
+<div class="canvas-wrap" id="canvasWrap"><canvas id="sceneCanvas" tabindex="0" aria-label="3D-сцена. Перетаскивайте для вращения, используйте колесо для приближения. Стрелки перемещают камеру."></canvas><div class="scene-labels" id="sceneLabels" aria-hidden="true"><div id="personLabel" class="label person-label"></div></div>
 <div class="loading" id="loading" role="status"><span class="loading-symbol" aria-hidden="true">◈</span><strong>Готовим вашу кухню</strong><span id="loadingText">Загружаем приборы и человека…</span><div class="loading-track"><span id="loadingProgress"></span></div></div>
 <div class="scene-error" id="sceneError" role="alert" hidden><strong>Не удалось открыть 3D</strong><p id="errorText">Попробуйте обновить страницу.</p><button id="retry3d" type="button">Попробовать ещё раз</button><a href="index.html">Открыть обычную матрицу</a></div>
 </div>
@@ -34,8 +33,10 @@
 <p class="gesture-hint" id="gestureHint">Перетаскивайте, чтобы осмотреть сцену · Колесо — приближение</p>
 </section>
 </main>
+<dialog class="product-picker" id="productPicker" aria-labelledby="pickerTitle"><div class="picker-head"><div><h2 id="pickerTitle">Выберите товары</h2><p id="pickerCount">До трёх приборов на сцене</p></div><button type="button" class="close-picker" id="closeProductPicker" aria-label="Закрыть выбор товаров">×</button></div><label class="picker-search"><span aria-hidden="true">⌕</span><input id="productSearch" type="search" placeholder="Название или артикул" aria-label="Найти товар"></label><div class="picker-tabs" id="productCategories" role="group" aria-label="Категория товара"></div><div class="picker-list" id="productList"></div><div class="picker-footer"><p id="pickerStatus" role="status">Выбранные товары сразу появляются на сцене.</p><button type="button" id="doneProductPicker">Готово</button></div></dialog>
 <script>if(location.protocol==='file:'){document.getElementById('loading').hidden=true;document.getElementById('sceneError').hidden=false;document.getElementById('errorText').textContent='Откройте 3D в онлайн-версии матрицы.';document.getElementById('retry3d').hidden=true;var a=document.getElementById('sceneError').querySelector('a');a.href='https://julia0613.github.io/matrix/3d.html';a.textContent='Открыть 3D онлайн';}</script>
-<script src="catalog.js?v=20261031-9"></script>
-<script type="module" src="3d.js?v=20261031-9"></script>
+<script src="catalog.js?v=20261031-12"></script>
+<script src="models-3d.js?v=20261031-12"></script>
+<script type="module" src="3d.js?v=20261031-12"></script>
 </body>
 </html>

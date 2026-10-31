@@ -1,14 +1,11 @@
-Original DEMIAND comparison woman — 2026-10-31
+Original DEMIAND comparison person
 
-The body, clothing, fingers, footwear, face and hair geometry were authored from
-zero for this project using parametric surfaces and independently sculpted mesh.
-No third-party human, clothing or hair meshes are included.
-
-Visual reference: the existing human-standing.webp image in this project.
-The face colour is derived from that reference and projected onto original 3D
-face/eye/lid geometry. This is a stylized approximation, not an exact scan.
-
-The model has an upright neutral standing pose. Full width/height ratio is .271.
-Viewer normalization measures actual exported geometry, sets the chosen height,
-and places the lowest shoe point on the common floor. Source scene and build
-recipe are included in the separately supplied original-model archive.
+Created from scratch: original authored geometry for body, clothes, face,
+hair, hands and shoes. No third-party character asset is used.
+The face is intentionally simplified and generic. No photographic face, skin
+projection, images or textures are embedded. Small dark almond eyes, a soft
+nose, restrained mouth and eyebrows replace the previous photographic face.
+Ivory sweater, gray straight trousers, dark long hair and black loafers follow
+the visual direction of the 2D reference without claiming personal likeness.
+Natural waist and hip shaping, tapered bent sleeves and relaxed wrists.
+Geometry grounded at the floor, normalized to exactly 1.64 meters.

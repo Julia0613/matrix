@@ -25,19 +25,19 @@ export function createKitchen(scene,renderer){
  const grid=new THREE.GridHelper(8,32,'#c2c8d0','#d8dde5');grid.position.y=-.001;grid.material.transparent=true;grid.material.opacity=.3;scene.add(grid);
  // Only a rear wall: no front wall, side wall or ceiling can block the camera.
  const wall=new THREE.Mesh(new THREE.PlaneGeometry(6.2,2.75),standard('#17191e',.9));wall.position.set(0,1.375,-1.86);wall.receiveShadow=true;back.add(wall);
- box(back,4.7,.7,.028,0,1.24,-1.835,backStone,false);
+ box(back,3.98,.7,.028,0,1.24,-1.835,backStone,false);
  // Base cabinets, each with a fine brass reveal and recessed plinth.
- box(back,4.6,.1,.53,0,.05,-1.52,black);
- box(back,4.6,.014,.53,0,.108,-1.52,gold);
+ box(back,3.98,.1,.53,0,.05,-1.52,black);
+ box(back,3.98,.014,.53,0,.108,-1.52,gold);
  for(let i=0;i<7;i++){
-  const x=-1.98+i*.66;
-  box(back,.65,.75,.60,x,.49,-1.51,charcoal);
-  box(back,.638,.716,.02,x,.49,-1.199,charcoal);
+  const x=-1.71+i*.57;
+  box(back,.56,.75,.60,x,.49,-1.51,charcoal);
+  box(back,.548,.716,.02,x,.49,-1.199,charcoal);
   box(back,.35,.007,.018,x,.82,-1.181,gold);
  }
  // Split countertop gives the sink a real opening in the rear worktop.
  const sinkX=.18,sinkZ=-1.43,sinkW=.55,sinkD=.38,topY=.89;
- const left=-2.34,right=2.34,front=-1.16,rear=-1.82;
+ const left=-1.99,right=1.99,front=-1.16,rear=-1.82;
  const sl=sinkX-sinkW/2,sr=sinkX+sinkW/2,sf=sinkZ+sinkD/2,sb=sinkZ-sinkD/2;
  box(back,sl-left,.035,rear*-1+front,(left+sl)/2,topY-.0175,(front+rear)/2,stone);
  box(back,right-sr,.035,rear*-1+front,(right+sr)/2,topY-.0175,(front+rear)/2,stone);
@@ -58,13 +58,16 @@ export function createKitchen(scene,renderer){
  box(back,.82,.042,.44,sinkX,1.57,-1.58,black);
  box(back,.82,.008,.028,sinkX,1.546,-1.368,gold);
  box(back,.34,.50,.30,sinkX,1.84,-1.70,charcoal);
- for(const x of [-1.72,-1.06,.99,1.65]){
+ for(const x of [-1.64,-.99,.99,1.64]){
   box(back,.64,.69,.35,x,1.965,-1.66,charcoal);
   box(back,.624,.67,.02,x,1.965,-1.474,charcoal);
  }
  for(const x of [-2.22,2.22]){
-  box(ends,.42,2.40,.60,x,1.2,-1.51,charcoal);
-  box(ends,.38,2.2,.02,x,1.26,-1.197,black);
+  // Hollow cabinet: side panels and a rear panel, rather than a solid block.
+  box(ends,.42,2.40,.018,x,1.2,-1.801,charcoal);
+  for(const dx of [-.201,.201])box(ends,.018,2.40,.60,x+dx,1.2,-1.51,charcoal);
+  for(const y of [.009,2.391])box(ends,.42,.018,.60,x,y,-1.51,charcoal);
+  box(ends,.38,2.2,.02,x,1.26,-1.78,black);
   for(const y of [.45,.95,1.45,1.95,2.35]){
    box(ends,.38,.015,.40,x,y,-1.39,gold);
    box(ends,.35,.007,.012,x,y+.022,-1.18,warm,false);
@@ -78,9 +81,9 @@ export function createKitchen(scene,renderer){
   }
  }
  // Warm, recessed lines on the rear joinery only.
- box(back,4.7,.008,.014,0,1.614,-1.48,warm,false);
- box(back,4.7,.008,.016,0,2.38,-1.72,warm,false);
- box(back,4.7,.008,.014,0,.844,-1.186,gold,false);
+ box(back,3.98,.008,.014,0,1.614,-1.48,warm,false);
+ box(back,3.98,.008,.016,0,2.38,-1.72,warm,false);
+ box(back,3.98,.008,.014,0,.844,-1.186,gold,false);
 
  // Simple decor belongs exclusively to the rear worktop.
  function plant(x,z){
@@ -124,7 +127,7 @@ export function createKitchen(scene,renderer){
  function grain(){const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d'),pixels=ctx.createImageData(128,128);let n=13;for(let i=0;i<pixels.data.length;i+=4){n=(n*16807)%2147483647;const g=184+(n%39);pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=g;pixels.data[i+3]=255;}ctx.putImageData(pixels,0,0);const tex=new THREE.CanvasTexture(c);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(32,32);return tex;}
  const micro=grain();stone.bumpMap=micro;stone.bumpScale=.00018;stone.roughnessMap=micro;charcoal.bumpMap=micro;charcoal.bumpScale=.000055;
  function area(parent,w,h,x,y,z,tx,ty,tz,intensity){const light=new THREE.RectAreaLight('#ffb65b',intensity,w,h);light.position.set(x,y,z);light.lookAt(tx,ty,tz);lighting.add(light);return light;}
- area(back,4.4,.025,0,1.605,-1.48,0,.88,-1.43,45);
+ area(back,3.9,.025,0,1.605,-1.48,0,.88,-1.43,45);
  for(const x of [-2.22,2.22])area(ends,.24,2.15,x,1.25,-1.18,x,1.25,-1.5,1.4);
  function lightWash(w,h){const c=document.createElement('canvas');c.width=8;c.height=128;const ctx=c.getContext('2d'),g=ctx.createLinearGradient(0,0,0,128);g.addColorStop(0,'rgba(255,161,51,.32)');g.addColorStop(.22,'rgba(255,156,40,.13)');g.addColorStop(1,'rgba(255,149,36,0)');ctx.fillStyle=g;ctx.fillRect(0,0,8,128);const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;return new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false}));}
  const frontWash=lightWash(1.83,.22);frontWash.position.set(.30,.60,.379);island.add(frontWash);

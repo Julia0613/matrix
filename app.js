@@ -195,7 +195,7 @@ for(const [id,key,min,max]of [['humanHeight','human',145,205],['tableHeight','ta
 }
 $('resetSceneBtn').addEventListener('click',resetScene);
 $('open3dBtn').addEventListener('click',()=>{
- const query=new URLSearchParams({human:String(state.human),table:String(state.table),place:state.place});
+ const query=new URLSearchParams({human:String(state.human),table:String(state.table),place:state.place,models:[...state.selected].join(',')});
  if(location.protocol==='file:'){window.open('https://julia0613.github.io/matrix/3d.html?'+query,'_blank','noopener');return}
  $('threeFrame').src='3d.html?'+query;$('threeDialog').showModal();document.body.classList.add('three-open');
 });
@@ -206,7 +206,8 @@ window.addEventListener('message',e=>{
  if(Number.isFinite(e.data.human))state.human=Math.max(145,Math.min(205,e.data.human));
  if(Number.isFinite(e.data.table))state.table=Math.max(65,Math.min(110,e.data.table));
  if(['table','floor'].includes(e.data.place))state.place=e.data.place;
- close3d();renderModes();renderScene();
+ if(Array.isArray(e.data.models)){state.selected=new Set(e.data.models.filter(id=>catalog.some(p=>p.id===id)));state.focus=[...state.selected][0]||null;}
+ close3d();renderAll();
 });
 $('humanPosition').addEventListener('input',e=>movePerson(Number(e.target.value),true));
 for(const [id,camera]of [['overviewBtn','overview'],['closeViewBtn','close']])$(id).addEventListener('click',()=>{state.camera=camera;state.zoom=1;renderScene();frameSelection()});
