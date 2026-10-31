@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DEMIAND — сравнение в 3D</title>
+<meta name="description" content="HARRINGTON 5100 и RIVO 3500 в кухне: сравнение с человеком и столешницей в общем масштабе.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="3d.css?v=20261031-1">
+<script type="importmap">{"imports":{"three":"./assets/vendor/three.module.js"}}</script>
+</head>
+<body>
+<header class="topbar"><img src="assets/demiand-logo.svg" width="154" height="26" alt="DEMIAND"><a href="index.html" id="backLink"><span aria-hidden="true">←</span> К матрице размеров</a><span class="mode-badge">3D-сравнение</span></header>
+<main class="app-layout">
+<aside class="settings" id="settings">
+<div class="panel-title"><div class="eyebrow">ТЕХНИКА В ПРОСТРАНСТВЕ</div><h1>Почувствуйте<br>масштаб</h1><p>Посмотрите на приборы<br>с привычной точки зрения.</p></div>
+<section class="setting-section"><h2>Что сравниваем</h2>
+<label class="model-card"><input type="checkbox" id="show5100" checked><img src="assets/products/DEMIAND_DK-5100_HARRINGTON_black_front.webp" alt="" width="42" height="48"><span><strong>HARRINGTON</strong><small>DK-5100</small><span class="size" id="size5100">26,5 × 33 × 35 см</span></span><span class="model-check" aria-hidden="true">✓</span></label>
+<label class="model-card"><input type="checkbox" id="show3500" checked><img src="assets/products/DEMIAND_KF-3500_RIVO_black_front.webp" alt="" width="42" height="48"><span><strong>RIVO</strong><small>KF-3500</small><span class="size" id="size3500">21 × 31,5 × 30,5 см</span></span><span class="model-check" aria-hidden="true">✓</span></label><p class="field-note">Ширина × высота × глубина корпуса</p>
+</section>
+<section class="setting-section"><h2>Человек и стол</h2><label class="field-row"><span>Рост человека</span><span class="number"><input id="height3d" type="number" min="145" max="205" step="1" value="164" aria-label="Рост человека, сантиметры"><span>см</span></span></label>
+<div class="segments" role="group" aria-label="Положение приборов"><button id="onTable" class="active" type="button" aria-pressed="true">На столе</button><button id="onFloor" type="button" aria-pressed="false">На полу</button></div>
+<label class="field-row table-setting"><span>Высота стола</span><span class="number"><input id="table3d" type="number" min="65" max="110" step="1" value="76" aria-label="Высота стола, сантиметры"><span>см</span></span></label>
+</section>
+<section class="setting-section environment-setting"><h2>Окружение</h2><div class="segments" role="group" aria-label="Окружение сцены"><button id="kitchenBtn" class="active" aria-pressed="true" type="button">Кухня</button><button id="studioBtn" aria-pressed="false" type="button">Студия</button></div></section>
+<details class="scene-help"><summary>О точности сравнения</summary><p>Человек и приборы имеют общий масштаб. Рост регулируется, телосложение служит приблизительным ориентиром.</p><p>Высота HARRINGTON — 33 см, RIVO — 31,5 см. Модели приведены к размерам из каталога; исходная геометрия HARRINGTON отличается от официальной схемы по ширине и глубине.</p><p>Глубина RIVO указана для корпуса. Ручка рожка выступает вперёд.</p><p>Перспектива меняет видимый размер предметов. Для прямого сравнения выберите вид «Спереди».</p><a href="3d-credits.html" target="_blank" rel="noopener">Об источниках моделей</a></details>
+<button class="reset-scene" id="reset3d" type="button"><span aria-hidden="true">↺</span> Начать заново</button>
+</aside>
+<section class="scene-area" id="sceneArea" aria-label="Сцена сравнения">
+<div class="scene-top"><div class="view-buttons" role="group" aria-label="Ракурс камеры"><button id="viewPerspective" class="active" type="button" aria-pressed="true">Объём</button><button id="viewFront" type="button" aria-pressed="false">Спереди</button><button id="viewSide" type="button" aria-pressed="false">Сбоку</button></div><button class="settings-toggle" id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">Настройки <span aria-hidden="true">☷</span></button><span class="scale-note"><i></i> Общий масштаб</span></div>
+<div class="canvas-wrap" id="canvasWrap"><canvas id="sceneCanvas" tabindex="0" aria-label="3D-сцена. Перетаскивайте для вращения, используйте колесо для приближения. Стрелки перемещают камеру."></canvas><div class="scene-labels" id="sceneLabels" aria-hidden="true"><div id="personLabel" class="label person-label"></div><div id="label5100" class="label product-label"><strong>HARRINGTON</strong><span>Высота 33 см</span></div><div id="label3500" class="label product-label"><strong>RIVO</strong><span>Высота 31,5 см</span></div></div>
+<div class="loading" id="loading" role="status"><span class="loading-symbol" aria-hidden="true">◈</span><strong>Готовим вашу кухню</strong><span id="loadingText">Загружаем приборы и человека…</span><div class="loading-track"><span id="loadingProgress"></span></div></div>
+<div class="scene-error" id="sceneError" role="alert" hidden><strong>Не удалось открыть 3D</strong><p id="errorText">Попробуйте обновить страницу.</p><button id="retry3d" type="button">Попробовать ещё раз</button><a href="index.html">Открыть обычную матрицу</a></div>
+</div>
+<div class="scene-bottom"><label class="person-position"><span>Положение человека</span><span class="range-row"><span aria-hidden="true">←</span><input id="personPosition3d" type="range" min="-145" max="110" value="-95" step="1" aria-label="Положение человека по горизонтали"><span aria-hidden="true">→</span></span></label><div class="camera-tools"><button id="zoomOut3d" type="button" aria-label="Отдалить камеру">−</button><button id="fit3d" type="button" title="Показать человека и приборы целиком">Весь кадр</button><button id="zoomIn3d" type="button" aria-label="Приблизить камеру">+</button></div></div>
+<p class="gesture-hint" id="gestureHint">Перетаскивайте, чтобы осмотреть сцену · Колесо — приближение</p>
+</section>
+</main>
+<script>if(location.protocol==='file:'){document.getElementById('loading').hidden=true;document.getElementById('sceneError').hidden=false;document.getElementById('errorText').textContent='Откройте 3D в онлайн-версии матрицы.';document.getElementById('retry3d').hidden=true;var a=document.getElementById('sceneError').querySelector('a');a.href='https://julia0613.github.io/matrix/3d.html';a.textContent='Открыть 3D онлайн';}</script>
+<script src="catalog.js?v=20261031-3"></script>
+<script type="module" src="3d.js?v=20261031-4"></script>
+</body>
+</html>

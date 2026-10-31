@@ -194,6 +194,20 @@ for(const [id,key,min,max]of [['humanHeight','human',145,205],['tableHeight','ta
  $(id).addEventListener('change',()=>{state[key]=Math.round(Math.max(min,Math.min(max,Number($(id).value)||state[key])));renderModes();renderScene();renderDetail();});
 }
 $('resetSceneBtn').addEventListener('click',resetScene);
+$('open3dBtn').addEventListener('click',()=>{
+ const query=new URLSearchParams({human:String(state.human),table:String(state.table),place:state.place});
+ if(location.protocol==='file:'){window.open('https://julia0613.github.io/matrix/3d.html?'+query,'_blank','noopener');return}
+ $('threeFrame').src='3d.html?'+query;$('threeDialog').showModal();document.body.classList.add('three-open');
+});
+function close3d(){if($('threeDialog').open)$('threeDialog').close();document.body.classList.remove('three-open');$('threeFrame').removeAttribute('src');$('open3dBtn').focus({preventScroll:true});}
+$('threeDialog').addEventListener('cancel',e=>{e.preventDefault();close3d()});
+window.addEventListener('message',e=>{
+ if(e.source!==$('threeFrame').contentWindow||e.origin!==location.origin||e.data?.type!=='demiand-close-3d')return;
+ if(Number.isFinite(e.data.human))state.human=Math.max(145,Math.min(205,e.data.human));
+ if(Number.isFinite(e.data.table))state.table=Math.max(65,Math.min(110,e.data.table));
+ if(['table','floor'].includes(e.data.place))state.place=e.data.place;
+ close3d();renderModes();renderScene();
+});
 $('humanPosition').addEventListener('input',e=>movePerson(Number(e.target.value),true));
 for(const [id,camera]of [['overviewBtn','overview'],['closeViewBtn','close']])$(id).addEventListener('click',()=>{state.camera=camera;state.zoom=1;renderScene();frameSelection()});
 $('stageScroll').addEventListener('scroll',updateSceneHint,{passive:true});

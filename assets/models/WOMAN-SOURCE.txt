@@ -1,0 +1,29 @@
+Standing adult woman — DEMIAND comparison scene
+
+Source data: MakeHuman system assets via Kasper Olesen / CharacterCreator.
+Generated output GLBs (body, morph targets, hair, garments, textures) are CC0-1.0.
+The program code of CharacterCreator is GPL-3.0-or-later and is not included or used at runtime.
+
+Primary source:
+https://github.com/kblood/CharacterCreator/tree/master/output
+Exact generated-data licence declaration:
+https://github.com/kblood/CharacterCreator/blob/master/LICENSE-NOTES.md#generated-files-owner-decision-2026-10-03
+MakeHuman CC0 export FAQ:
+https://static.makehumancommunity.org/makehuman/faq/can_i_sell_models_created_with_makehuman.html
+CC0-1.0:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Source files used: base_body.glb, hair_long01.glb, clothing_hoodie.glb,
+clothing_jeans.glb, clothing_shoes.glb. All are listed as CC0 output assets.
+
+Adaptation: adult female morphology, relaxed standing pose, natural hand and foot
+proportions, waist-length light sweater with hood removed, gray trousers,
+black shoes and dark hair. Clothing and hair colours are baked into glTF-compatible
+albedo textures. Body under clothing is removed to avoid intersections.
+Static geometry is baked, smoothed and compressed for the browser.
+No program code or animation from the source project is distributed.
+
+This is an approximate adult reference with a general face, not a scan or exact
+3D reconstruction of the woman photographed in the 2D comparison.
+The viewer measures full height to set the selected stature and places feet on the floor.
+Prepared 2026-10-31. CC0 imposes no attribution requirement; sources retained for transparency.

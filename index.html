@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Матрица размеров DEMIAND: сравните реальные приборы друг с другом, с человеком и кухонным столом.">
 <title>DEMIAND — матрица размеров</title>
-<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=20261031-2">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=20261031-3">
 </head>
 <body>
 <a class="skip" href="#sceneTitle">Перейти к сравнению</a>
@@ -19,7 +19,7 @@
 </aside>
 
 <section class="scene-card" aria-label="Сравнение размеров">
-<div class="scene-heading"><div><div class="section-kicker">02 / СРАВНЕНИЕ</div><h2 id="sceneTitle">Оцените масштаб</h2><span id="selectedCount" aria-live="polite"></span></div><div class="view-switch segmented" role="group" aria-label="План сцены"><button id="overviewBtn" type="button" class="active" aria-pressed="true">Общий вид</button><button id="closeViewBtn" type="button" aria-pressed="false">Крупный план</button></div></div>
+<div class="scene-heading"><div><div class="section-kicker">02 / СРАВНЕНИЕ</div><h2 id="sceneTitle">Оцените масштаб</h2><span id="selectedCount" aria-live="polite"></span></div><div class="scene-heading-actions"><button id="open3dBtn" type="button" class="open-3d"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z M4 7.5l8 4.5 8-4.5M12 12v9"/></svg> Посмотреть в 3D</button><div class="view-switch segmented" role="group" aria-label="План сцены"><button id="overviewBtn" type="button" class="active" aria-pressed="true">Общий вид</button><button id="closeViewBtn" type="button" aria-pressed="false">Крупный план</button></div></div></div>
 <div class="scene-controls">
 <fieldset class="control-group"><legend>Человек</legend><div class="control-group-row"><div class="segmented" role="group" aria-label="Поза человека"><button id="standingBtn" type="button" aria-pressed="true" class="active">Стоит</button><button id="sittingBtn" type="button" aria-pressed="false">Сидит</button></div><label class="control"><span class="control-label">Рост</span><span class="number-field"><input id="humanHeight" type="number" min="145" max="205" value="170" step="1" aria-label="Рост человека, сантиметры"><span>см</span></span></label></div></fieldset>
 <fieldset class="control-group"><legend>Приборы</legend><div class="control-group-row"><div class="segmented" role="group" aria-label="Положение приборов"><button id="tableBtn" type="button" aria-pressed="true" class="active">На столе</button><button id="floorBtn" type="button" aria-pressed="false">На полу</button></div><label class="control table-control"><span class="control-label">Высота стола</span><span class="number-field"><input id="tableHeight" type="number" min="65" max="110" value="76" step="1" aria-label="Высота стола, сантиметры"><span>см</span></span></label></div></fieldset>
@@ -32,6 +32,7 @@
 </div>
 <footer><img class="footer-logo" src="assets/demiand-logo.svg" alt="DEMIAND" width="112" height="19"><span>Искусство в каждом хрусте</span></footer>
 </main>
+<dialog id="threeDialog" class="three-dialog" aria-label="Сравнение HARRINGTON и RIVO в 3D"><iframe id="threeFrame" title="3D-сравнение DEMIAND" allow="fullscreen" loading="lazy"></iframe></dialog>
 <div class="toast" id="status" role="status" aria-live="polite"></div>
-<script src="catalog.js?v=20261031-2"></script><script src="app.js?v=20261031-2"></script>
+<script src="catalog.js?v=20261031-3"></script><script src="app.js?v=20261031-3"></script>
 </body></html>
