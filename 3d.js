@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from './assets/vendor/OrbitControls.js';
 import {GLTFLoader} from './assets/vendor/GLTFLoader.js';
 import {DRACOLoader} from './assets/vendor/DRACOLoader.js';
-import {createKitchen} from './3d-kitchen.js?v=20261031-7';
+import {createKitchen} from './3d-kitchen.js?v=20261031-8';
 import {EffectComposer} from './assets/vendor/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from './assets/vendor/addons/postprocessing/RenderPass.js';
 import {SSAOPass} from './assets/vendor/addons/postprocessing/SSAOPass.js';
