@@ -7,24 +7,23 @@ export function createKitchen(scene,renderer){
  const group=new THREE.Group(),island=new THREE.Group(),lighting=new THREE.Group();scene.add(group,island,lighting);
  const back=new THREE.Group(),ends=new THREE.Group(),pendants=new THREE.Group();group.add(back,ends,pendants);
  const standard=(color,roughness=.5,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
- const charcoal=standard('#121519',.62),rib=standard('#0b0e12',.64),gold=standard('#b18a49',.29,.86),black=standard('#070a0d',.52),ceramic=standard('#c9c0ad',.58),wood=standard('#796246',.65),glass=new THREE.MeshPhysicalMaterial({color:'#30343a',metalness:.05,roughness:.16,transparent:true,opacity:.10,depthWrite:false});
- const warm=new THREE.MeshBasicMaterial({color:'#ffaf46',toneMapped:false});
+ const charcoal=standard('#c9c8c7',.4),rib=standard('#c6c3c1',.4),gold=standard('#c4bdb4',.25,.82),black=standard('#92908f',.5),ceramic=standard('#ececee',.58),wood=standard('#aa9f91',.65),glass=new THREE.MeshPhysicalMaterial({color:'#dce5ec',metalness:.05,roughness:.16,transparent:true,opacity:.10,depthWrite:false});
+ const facade=new THREE.MeshPhysicalMaterial({color:'#d3cfcd',roughness:.34,metalness:0,clearcoat:.3,clearcoatRoughness:.32,specularIntensity:.55});
+ const warm=new THREE.MeshBasicMaterial({color:'#ffe1c9',toneMapped:false});
  function box(parent,w,h,d,x,y,z,material,cast=true){const geometry=new THREE.BoxGeometry(w,h,d);if(material.userData.marble){const p=geometry.attributes.position,n=geometry.attributes.normal,uv=geometry.attributes.uv;for(let i=0;i<p.count;i++){const nx=Math.abs(n.getX(i)),ny=Math.abs(n.getY(i));uv.setXY(i,(nx>.5?p.getZ(i)+z:p.getX(i)+x)/1.35,(ny>.5?p.getZ(i)+z:p.getY(i)+y)/1.35);}uv.needsUpdate=true;}const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,y,z);mesh.castShadow=cast;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
  function cylinder(parent,r1,r2,h,x,y,z,material,n=24){const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,n),material);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
  function ball(parent,rx,ry,rz,x,y,z,material){const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,20,12),material);mesh.scale.set(rx,ry,rz);mesh.position.set(x,y,z);mesh.castShadow=true;parent.add(mesh);return mesh;}
  function tube(parent,points,r,material){const mesh=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p))),28,r,8,false),material);parent.add(mesh);mesh.castShadow=true;return mesh;}
  let resolveTexture,rejectTexture;const ready=new Promise((resolve,reject)=>{resolveTexture=resolve;rejectTexture=reject;});
- const stoneMap=new THREE.TextureLoader().load('./assets/textures/black-gold-marble.webp',()=>{floorMap.needsUpdate=true;resolveTexture();},undefined,()=>rejectTexture(Error('Не удалось загрузить камень.')));stoneMap.colorSpace=THREE.SRGBColorSpace;stoneMap.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());stoneMap.wrapS=stoneMap.wrapT=THREE.RepeatWrapping;const stone=new THREE.MeshPhysicalMaterial({color:'#ffffff',map:stoneMap,roughness:.52,metalness:0,clearcoat:0,envMapIntensity:.12,specularIntensity:.22,emissive:'#f5b765',emissiveIntensity:.035});
- stone.emissiveMap=stoneMap;stone.userData.marble=true;const backStone=stone.clone();backStone.color.set('#73777b');backStone.roughness=.42;backStone.clearcoat=0;backStone.envMapIntensity=.10;backStone.emissiveIntensity=.012;
- const floorMap=stoneMap.clone();floorMap.wrapS=floorMap.wrapT=THREE.RepeatWrapping;floorMap.repeat.set(3.7,3.7);floorMap.needsUpdate=true;
- const floorMat=new THREE.MeshPhysicalMaterial({color:'#79736c',map:floorMap,roughness:.94,metalness:0,envMapIntensity:.10,specularIntensity:.12}),studioMat=standard('#e7e9ee',.85);
- // Subtle mineral variation on the honed floor keeps contact shadows legible.
- floorMat.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\ndiffuseColor.rgb = vec3(0.035, 0.032, 0.028) + diffuseColor.rgb * 0.12;');};
- floorMat.customProgramCacheKey=()=> 'honed-floor-v1';
+ const stoneMap=new THREE.TextureLoader().load('./assets/textures/cristallo-quartzite.webp',()=>{floorMap.needsUpdate=true;resolveTexture();},undefined,()=>rejectTexture(Error('Не удалось загрузить камень.')));stoneMap.colorSpace=THREE.SRGBColorSpace;stoneMap.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());stoneMap.wrapS=stoneMap.wrapT=THREE.RepeatWrapping;const stone=new THREE.MeshPhysicalMaterial({color:'#f0efee',map:stoneMap,roughness:.23,metalness:0,clearcoat:.5,clearcoatRoughness:.18,envMapIntensity:.65,specularIntensity:.7,transmission:.08,thickness:.04,ior:1.48,emissive:'#f5f2ef',emissiveIntensity:.025});
+ stone.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\nfloat mineralLuma=dot(diffuseColor.rgb,vec3(0.2126,0.7152,0.0722));diffuseColor.rgb=mix(vec3(0.70,0.695,0.69),vec3(mineralLuma),0.60);');};stone.customProgramCacheKey=()=> 'pearl-cristallo-v5';stone.emissiveMap=stoneMap;stone.userData.marble=true;const backStone=stone.clone();backStone.color.set('#e0dfde');backStone.roughness=.36;backStone.envMapIntensity=.35;backStone.emissiveIntensity=.015;backStone.onBeforeCompile=stone.onBeforeCompile;backStone.customProgramCacheKey=stone.customProgramCacheKey;
+ const floorMap=stoneMap.clone();floorMap.wrapS=floorMap.wrapT=THREE.RepeatWrapping;floorMap.repeat.set(3.7,3.7);
+ const floorMat=new THREE.MeshPhysicalMaterial({color:'#dad8d7',map:floorMap,roughness:.48,metalness:0,envMapIntensity:.35,specularIntensity:.4}),studioMat=standard('#e7e9ee',.85);
+ floorMat.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.40,0.395,0.395), 0.90);');};floorMat.customProgramCacheKey=()=> 'pearl-floor-v5';
  const ground=new THREE.Mesh(new THREE.PlaneGeometry(12,12),floorMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.0001;ground.receiveShadow=true;scene.add(ground);
  const grid=new THREE.GridHelper(8,32,'#c2c8d0','#d8dde5');grid.position.y=-.001;grid.material.transparent=true;grid.material.opacity=.3;scene.add(grid);
  // Only a rear wall: no front wall, side wall or ceiling can block the camera.
- const wall=new THREE.Mesh(new THREE.PlaneGeometry(6.2,2.75),standard('#17191e',.9));wall.position.set(0,1.375,-1.86);wall.receiveShadow=true;back.add(wall);
+ const wall=new THREE.Mesh(new THREE.PlaneGeometry(6.2,2.75),standard('#cac7c6',.85));wall.position.set(0,1.375,-1.86);wall.receiveShadow=true;back.add(wall);
  box(back,3.98,.7,.028,0,1.24,-1.835,backStone,false);
  // Base cabinets, each with a fine brass reveal and recessed plinth.
  box(back,3.98,.1,.53,0,.05,-1.52,black);
@@ -32,7 +31,7 @@ export function createKitchen(scene,renderer){
  for(let i=0;i<7;i++){
   const x=-1.71+i*.57;
   box(back,.56,.75,.60,x,.49,-1.51,charcoal);
-  box(back,.548,.716,.02,x,.49,-1.199,charcoal);
+  box(back,.548,.716,.02,x,.49,-1.199,facade);
   box(back,.35,.007,.018,x,.82,-1.181,gold);
  }
  // Split countertop gives the sink a real opening in the rear worktop.
@@ -43,7 +42,7 @@ export function createKitchen(scene,renderer){
  box(back,right-sr,.035,rear*-1+front,(right+sr)/2,topY-.0175,(front+rear)/2,stone);
  box(back,sinkW,.035,front-sf,sinkX,topY-.0175,(front+sf)/2,stone);
  box(back,sinkW,.035,sb-rear,sinkX,topY-.0175,(sb+rear)/2,stone);
- const basin=standard('#111820',.22,.55),rim=standard('#524632',.28,.7);
+ const basin=standard('#8d9aa7',.3,.65),rim=standard('#bbc7d2',.28,.8);
  box(back,sinkW,.008,sinkD,sinkX,.734,sinkZ,basin);
  for(const x of [sl,sr])box(back,.009,.15,sinkD,x,.813,sinkZ,basin);
  for(const z of [sb,sf])box(back,sinkW,.15,.009,sinkX,.813,z,basin);
@@ -60,7 +59,7 @@ export function createKitchen(scene,renderer){
  box(back,.34,.50,.30,sinkX,1.84,-1.70,charcoal);
  for(const x of [-1.64,-.99,.99,1.64]){
   box(back,.64,.69,.35,x,1.965,-1.66,charcoal);
-  box(back,.624,.67,.02,x,1.965,-1.474,charcoal);
+  box(back,.624,.67,.02,x,1.965,-1.474,facade);
  }
  for(const x of [-2.22,2.22]){
   // Hollow cabinet: side panels and a rear panel, rather than a solid block.
@@ -109,7 +108,7 @@ export function createKitchen(scene,renderer){
  // Pendants hang behind the comparison area and never over the products.
  for(const x of [-.9,.9]){
   cylinder(pendants,.004,.004,.36,x,2.45,-1.05,gold,12);
-  ball(pendants,.085,.09,.085,x,2.18,-1.05,new THREE.MeshPhysicalMaterial({color:'#c9b487',transparent:true,opacity:.2,roughness:.05,metalness:.05,depthWrite:false}));
+  ball(pendants,.085,.09,.085,x,2.18,-1.05,new THREE.MeshPhysicalMaterial({color:'#dde7ef',transparent:true,opacity:.2,roughness:.05,metalness:.05,depthWrite:false}));
   cylinder(pendants,.014,.014,.06,x,2.18,-1.05,warm,16);
   cylinder(pendants,.026,.026,.018,x,2.27,-1.05,gold);
  }
@@ -126,16 +125,17 @@ export function createKitchen(scene,renderer){
 
  function grain(){const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d'),pixels=ctx.createImageData(128,128);let n=13;for(let i=0;i<pixels.data.length;i+=4){n=(n*16807)%2147483647;const g=184+(n%39);pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=g;pixels.data[i+3]=255;}ctx.putImageData(pixels,0,0);const tex=new THREE.CanvasTexture(c);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(32,32);return tex;}
  const micro=grain();stone.bumpMap=micro;stone.bumpScale=.00018;stone.roughnessMap=micro;charcoal.bumpMap=micro;charcoal.bumpScale=.000055;
- function area(parent,w,h,x,y,z,tx,ty,tz,intensity){const light=new THREE.RectAreaLight('#ffb65b',intensity,w,h);light.position.set(x,y,z);light.lookAt(tx,ty,tz);lighting.add(light);return light;}
- area(back,3.9,.025,0,1.605,-1.48,0,.88,-1.43,45);
- for(const x of [-2.22,2.22])area(ends,.24,2.15,x,1.25,-1.18,x,1.25,-1.5,1.4);
- function lightWash(w,h){const c=document.createElement('canvas');c.width=8;c.height=128;const ctx=c.getContext('2d'),g=ctx.createLinearGradient(0,0,0,128);g.addColorStop(0,'rgba(255,161,51,.32)');g.addColorStop(.22,'rgba(255,156,40,.13)');g.addColorStop(1,'rgba(255,149,36,0)');ctx.fillStyle=g;ctx.fillRect(0,0,8,128);const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;return new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false}));}
+ function area(parent,w,h,x,y,z,tx,ty,tz,intensity){const light=new THREE.RectAreaLight('#ffead6',intensity,w,h);light.position.set(x,y,z);light.lookAt(tx,ty,tz);lighting.add(light);return light;}
+ const daylight=new THREE.RectAreaLight('#fafbff',3.5,2.4,2.7);daylight.position.set(-3.0,2.0,1.4);daylight.lookAt(0,1,-1.3);lighting.add(daylight);
+ area(back,3.9,.025,0,1.605,-1.48,0,1.05,-1.78,32);
+ for(const x of [-2.22,2.22])area(ends,.24,2.15,x,1.25,-1.18,x,1.25,-1.5,3.2);
+ function lightWash(w,h){const c=document.createElement('canvas');c.width=8;c.height=128;const ctx=c.getContext('2d'),g=ctx.createLinearGradient(0,0,0,128);g.addColorStop(0,'rgba(255,222,179,.32)');g.addColorStop(.22,'rgba(255,222,179,.14)');g.addColorStop(1,'rgba(255,222,179,0)');ctx.fillStyle=g;ctx.fillRect(0,0,8,128);const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;return new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,blending:THREE.NormalBlending,toneMapped:false}));}
  const frontWash=lightWash(1.83,.22);frontWash.position.set(.30,.60,.379);island.add(frontWash);
  const floorWash=lightWash(1.83,.48);floorWash.rotation.x=-Math.PI/2;floorWash.position.set(.30,.003,.59);island.add(floorWash);
- const lipLight=area(island,1.82,.018,.30,.71,.378,.30,.50,.41,24);
- const toeLight=area(island,1.82,.016,.30,.085,.35,.30,0,.56,22);
+ const lipLight=area(island,1.82,.018,.30,.71,.378,.30,.50,.41,15);
+ const toeLight=area(island,1.82,.016,.30,.085,.35,.30,0,.56,13);
  // Lighting is independent of the view-dependent cabinet visibility.
- const pendantKey=new THREE.SpotLight('#ffcf90',8,4.5,.88,.65,2);pendantKey.position.set(-.9,2.18,-1.05);pendantKey.target.position.set(-.15,.55,.15);pendantKey.castShadow=true;pendantKey.shadow.mapSize.set(1024,1024);pendantKey.shadow.camera.near=.06;pendantKey.shadow.camera.far=4.5;pendantKey.shadow.normalBias=.001;pendantKey.shadow.bias=-.00008;lighting.add(pendantKey,pendantKey.target);
+ const pendantKey=new THREE.SpotLight('#fff7ef',3,4.5,.88,.65,2);pendantKey.position.set(-.9,2.18,-1.05);pendantKey.target.position.set(-.15,.55,.15);pendantKey.castShadow=true;pendantKey.shadow.mapSize.set(1024,1024);pendantKey.shadow.camera.near=.06;pendantKey.shadow.camera.far=4.5;pendantKey.shadow.normalBias=.001;pendantKey.shadow.bias=-.00008;lighting.add(pendantKey,pendantKey.target);
 
  function setHeight(h,visible=true){
   island.visible=visible;lipLight.visible=toeLight.visible=visible;

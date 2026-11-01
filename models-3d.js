@@ -8,11 +8,11 @@ window.MODELS_3D = {
     "rotationY": 0
   },
   "2100": {
-    "path": "assets/models/2100.glb",
+    "path": "assets/models/2100-studio.glb",
     "rotationY": 0
   },
   "2200": {
-    "path": "assets/models/2200.glb",
+    "path": "assets/models/2200-studio.glb",
     "rotationY": 0
   },
   "2300": {
@@ -20,11 +20,11 @@ window.MODELS_3D = {
     "rotationY": 0
   },
   "2400": {
-    "path": "assets/models/2400.glb",
+    "path": "assets/models/2400-studio.glb",
     "rotationY": 0
   },
   "2500": {
-    "path": "assets/models/2500.glb",
+    "path": "assets/models/2500-studio.glb",
     "rotationY": 0
   },
   "2600": {
@@ -33,7 +33,7 @@ window.MODELS_3D = {
     "housingDepth": 0.2278
   },
   "2700": {
-    "path": "assets/models/2700.glb",
+    "path": "assets/models/2700-studio.glb",
     "rotationY": 0
   },
   "5100": {
@@ -61,12 +61,12 @@ window.MODELS_3D = {
     "housingDepth": 0.32365
   },
   "1200": {
-    "path": "assets/models/1200.glb",
+    "path": "assets/models/1200-studio.glb",
     "rotationY": 0,
     "housingDepth": 0.202
   },
   "2900": {
-    "path": "assets/models/2900.glb",
+    "path": "assets/models/2900-window.glb",
     "rotationY": 0
   },
   "3100": {

@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import {OrbitControls} from './assets/vendor/OrbitControls.js';
 import {GLTFLoader} from './assets/vendor/GLTFLoader.js';
 import {DRACOLoader} from './assets/vendor/DRACOLoader.js';
-import {createKitchen} from './3d-kitchen.js?v=20261031-12';
+import {createKitchen} from './3d-kitchen.js?v=20261101-21';
+import {createFoodInteriors} from './3d-food.js?v=20261101-21';
 import {EffectComposer} from './assets/vendor/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from './assets/vendor/addons/postprocessing/RenderPass.js';
 import {SSAOPass} from './assets/vendor/addons/postprocessing/SSAOPass.js';
@@ -26,19 +27,20 @@ let kitchenDesign,composer,scenePass,contactAO;
 let disposed=false,currentPreset='perspective';
 const objects=new Map(),contactShadows=new Map(),wrap=$('canvasWrap'),canvas=$('sceneCanvas');
 const loader=new GLTFLoader(),draco=new DRACOLoader();draco.setDecoderPath('./assets/vendor/');draco.setWorkerLimit(2);loader.setDRACOLoader(draco);
+const foodInteriors=createFoodInteriors(loader);
 
 function fail(message){$('loading').hidden=true;$('sceneError').hidden=false;$('errorText').textContent=message;}
 function initRenderer(){
  renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
  renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
- renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;renderer.outputColorSpace=THREE.SRGBColorSpace;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.96;renderer.outputColorSpace=THREE.SRGBColorSpace;
  scene=new THREE.Scene();scene.background=new THREE.Color('#eee9e1');
  perspective=new THREE.PerspectiveCamera(34,1,.03,40);orthographic=new THREE.OrthographicCamera(-2,2,2,-2,.03,40);camera=perspective;
- const hemi=new THREE.HemisphereLight('#ffe0b2','#24170d',.40);scene.add(hemi);
- const sun=new THREE.DirectionalLight('#ffd29b',2.0);sun.position.set(-3,5,4);sun.castShadow=true;
+ const hemi=new THREE.HemisphereLight('#f6f6f8','#808083',.5);scene.add(hemi);
+ const sun=new THREE.DirectionalLight('#fffaf5',1.7);sun.position.set(-3,5,4);sun.castShadow=true;
  sun.shadow.mapSize.set(innerWidth<760?1024:2048,innerWidth<760?1024:2048);sun.shadow.camera.left=-3;sun.shadow.camera.right=3;sun.shadow.camera.top=3;sun.shadow.camera.bottom=-3;sun.shadow.camera.near=.1;sun.shadow.camera.far=12;sun.shadow.normalBias=.0008;sun.shadow.bias=-.00008;sun.shadow.radius=3;scene.add(sun);
- const fill=new THREE.DirectionalLight('#ffdeb1',.65);fill.position.set(3,3,2);scene.add(fill);
- const pmrem=new THREE.PMREMGenerator(renderer),room=warmReflectionRoom();environmentTexture=pmrem.fromScene(room,.06).texture;scene.environment=environmentTexture;scene.environmentIntensity=1.5;room.traverse(o=>{o.geometry?.dispose();o.material?.dispose()});pmrem.dispose();
+ const fill=new THREE.DirectionalLight('#f1f3f8',.65);fill.position.set(3,3,2);scene.add(fill);
+ const pmrem=new THREE.PMREMGenerator(renderer),room=pearlReflectionRoom();environmentTexture=pmrem.fromScene(room,.035).texture;scene.environment=environmentTexture;scene.environmentIntensity=1.2;room.traverse(o=>{o.geometry?.dispose();o.material?.dispose()});pmrem.dispose();
  setupControls();initPostprocessing();
  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();fail('Браузер приостановил 3D. Обновите просмотр, чтобы продолжить.')});
 }
@@ -50,13 +52,13 @@ function initPostprocessing(){
  composer.addPass(contactAO);composer.addPass(new OutputPass());
 }
 function syncPostCamera(){if(!contactAO)return;scenePass.camera=camera;contactAO.camera=camera;const m=contactAO.ssaoMaterial;m.defines.PERSPECTIVE_CAMERA=camera.isPerspectiveCamera?1:0;m.needsUpdate=true;m.uniforms.cameraProjectionMatrix.value.copy(camera.projectionMatrix);m.uniforms.cameraInverseProjectionMatrix.value.copy(camera.projectionMatrixInverse);}
-function warmReflectionRoom(){
- const room=new THREE.Scene();room.background=new THREE.Color('#20180f');
- const shell=new THREE.Mesh(new THREE.SphereGeometry(10,24,16),new THREE.MeshBasicMaterial({color:'#7f756b',side:THREE.BackSide}));room.add(shell);
+function pearlReflectionRoom(){
+ const room=new THREE.Scene();room.background=new THREE.Color('#989897');
+ const shell=new THREE.Mesh(new THREE.SphereGeometry(10,24,16),new THREE.MeshBasicMaterial({color:'#a7a7a6',side:THREE.BackSide}));room.add(shell);
  function panel(w,h,x,y,z,color,power){const m=new THREE.MeshBasicMaterial({color:new THREE.Color(color).multiplyScalar(power),side:THREE.DoubleSide,toneMapped:false});const p=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);p.position.set(x,y,z);p.lookAt(0,.9,0);room.add(p);}
- panel(2.0,3.3,-4.5,2.2,3.8,'#ffcb88',1.4);panel(1.1,3.5,4.7,2.0,2.1,'#ffb55b',1.6);
- panel(2.0,1.3,0,3.3,5.7,'#ffe0b2',1.0);panel(4.4,.15,0,2.6,-3.8,'#ffae46',1.7);
- panel(3.1,.11,-.5,4.2,0,'#ffd59b',1.2);return room;
+ panel(2.0,3.3,-4.5,2.2,3.8,'#fffdf9',1.1);panel(1.1,3.5,4.7,2.0,2.1,'#edf2f8',1.3);
+ panel(2.0,1.3,0,3.3,5.7,'#fffdfa',.9);panel(4.4,.15,0,2.6,-3.8,'#fff0df',.8);
+ panel(3.1,.11,-.5,4.2,0,'#fffbf5',1.0);return room;
 }
 function setupControls(){
  controls?.dispose();controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.09;controls.minDistance=.7;controls.maxDistance=11;controls.minZoom=.45;controls.maxZoom=4;
@@ -84,6 +86,7 @@ function normalizeProduct(gltf,id){
 }
 function normalizeWoman(gltf){
  woman=new THREE.Group();const model=gltf.scene;
+ model.traverse(o=>{if(!o.isMesh)return;const recolor=m=>{const palette={'Charcoal tailored trousers':'#62666c','Tailoring seam':'#555a61','Trousers button':'#484d54','Ivory fine knit sweater':'#a9adb4','Sweater ribbed hems':'#a1a6ae'};if(!palette[m.name])return m;const copy=m.clone();copy.color.set(palette[m.name]);copy.roughness=.82;return copy;};o.material=Array.isArray(o.material)?o.material.map(recolor):recolor(o.material);});
  model.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(model,true);const size=bounds.getSize(new THREE.Vector3());
  model.scale.setScalar(1/size.y);model.updateMatrixWorld(true);const unitBounds=new THREE.Box3().setFromObject(model,true),center=unitBounds.getCenter(new THREE.Vector3());
  model.position.x-=center.x;model.position.y-=unitBounds.min.y;model.position.z-=center.z;woman.add(model);scene.add(woman);prepareMeshes(woman);
@@ -98,7 +101,7 @@ function syncScene(){
  buildIsland();
  for(const [id,shadow]of contactShadows){if(id==='woman'){shadow.position.set(state.personX,.0003,-.60+.065*state.human/164);shadow.scale.setScalar(state.human/164);}else{const p=products[id];shadow.position.set(p.x,(state.place==='table'?state.table/100:0)+.0003,p.z);shadow.visible=state.selected.has(id)&&objects.has(id);}}
  kitchenDesign.setEnvironment(state.room==='kitchen');
- scene.background.set(state.room==='kitchen'?'#2b2d32':'#eef0f5');$('personLabel').textContent=`Рост ${state.human} см`;
+ scene.background.set(state.room==='kitchen'?'#ccc8c6':'#eef0f5');$('personLabel').textContent=`Рост ${state.human} см`;
  updateMeasurementData();renderSelected();
 }
 function layoutProducts(){
@@ -121,7 +124,7 @@ function renderPicker(){
 }
 async function ensureProduct(id){
  if(objects.has(id))return;if(pendingLoads.has(id))return pendingLoads.get(id);
- const p=products[id],promise=(async()=>{try{normalizeProduct(await loader.loadAsync(p.path),id);makeContactShadow(id,p.width*1.3,p.assembledSize.z*1.2);loadErrors.delete(id);}catch(error){loadErrors.add(id);state.selected.delete(id);console.warn('DEMIAND: model unavailable',id,error);showSelectionNotice(`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`);$('pickerStatus').textContent=`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`;}finally{pendingLoads.delete(id);syncScene();renderPicker();}})();pendingLoads.set(id,promise);return promise;
+ const p=products[id],promise=(async()=>{try{normalizeProduct(await loader.loadAsync(p.path+'?v=20261101-21'),id);try{await foodInteriors.attach(id,objects.get(id));}catch(error){console.warn('DEMIAND: interior unavailable',id,error);}makeContactShadow(id,p.width*1.3,p.assembledSize.z*1.2);loadErrors.delete(id);}catch(error){loadErrors.add(id);state.selected.delete(id);console.warn('DEMIAND: model unavailable',id,error);showSelectionNotice(`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`);$('pickerStatus').textContent=`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`;}finally{pendingLoads.delete(id);syncScene();renderPicker();}})();pendingLoads.set(id,promise);return promise;
 }
 async function loadSelected(){await Promise.all([...state.selected].map(ensureProduct));}
 async function toggleProduct(id,on){
@@ -144,7 +147,7 @@ function bindProductPicker(){
 }
 function updateMeasurementData(){
  const info={human:state.human/100,table:state.table/100,place:state.place,models:{}};
- for(const [id,o]of objects){const b=new THREE.Box3().setFromObject(o,true),s=b.getSize(new THREE.Vector3());info.models[id]={visible:o.visible,width:s.x,height:s.y,assembledDepth:s.z,baseY:b.min.y,backZ:b.min.z,frontZ:b.max.z,rearEdgeGap:state.place==='table'?b.min.z+.4:null,housingDepth:products[id].depth};}
+ for(const [id,o]of objects){const b=new THREE.Box3().setFromObject(o,true),s=b.getSize(new THREE.Vector3());info.models[id]={visible:o.visible,width:s.x,height:s.y,assembledDepth:s.z,baseY:b.min.y,backZ:b.min.z,frontZ:b.max.z,rearEdgeGap:state.place==='table'?b.min.z+.4:null,housingDepth:products[id].depth,interiorFood:o.userData.interiorFood||null};}
  if(woman){const box=new THREE.Box3().setFromObject(woman,true);info.person={height:box.max.y-box.min.y,width:box.max.x-box.min.x,baseY:box.min.y,x:woman.position.x};}
  canvas.dataset.measurements=JSON.stringify(info);
 }
@@ -196,11 +199,11 @@ function bindUI(){
 function nonBreakingCopy(){const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;while((node=walker.nextNode()))if(!/^(SCRIPT|STYLE)$/.test(node.parentElement?.tagName||''))node.nodeValue=node.nodeValue.replace(/(^|[\s(«])([ВвКкСсУуИиАа]|[Нн]е|[Пп]о|[Нн]а|[Ии]з|[Зз]а|[Дд]ля|[Оо]т|[Дд]о) +(?=[А-ЯЁа-яёA-Za-z0-9«])/gu,'$1$2\u00a0');}
 async function start(){
  try{
-  initRenderer();buildKitchen();makeContactShadow('woman',.42,.34);for(const [id,p]of Object.entries(products)){const label=document.createElement('div');label.id=p.label;label.className='label product-label';label.innerHTML=`<strong>${esc(p.name)}</strong><span>Высота ${fmt(p.height*100)} см</span>`;$('sceneLabels').append(label);}bindUI();syncScene();nonBreakingCopy();resize();animate();
+  initRenderer();buildKitchen();makeContactShadow('woman',.42,.34);for(const [id,p]of Object.entries(products)){const label=document.createElement('div');label.id=p.label;label.className='label product-label';label.innerHTML=`<strong>${esc(p.name)}</strong><span>Высота ${fmt(p.height*100)} см</span>`;$('sceneLabels').append(label);}bindUI();syncScene();nonBreakingCopy();resize();
   $('loadingProgress').style.width='30%';
-  await Promise.all([kitchenDesign.ready,loadSelected(),(async()=>{normalizeWoman(await loader.loadAsync('assets/models/woman-original.glb?v=20261031-12'));})()]);
+  await Promise.all([kitchenDesign.ready,loadSelected(),(async()=>{normalizeWoman(await loader.loadAsync('assets/models/woman-original.glb?v=20261101-21'));})()]);
   $('loadingProgress').style.width='100%';
-  syncScene();resize();fitView('perspective');$('loading').classList.add('done');$('loading').setAttribute('aria-hidden','true');setTimeout(()=>$('loading').hidden=true,450);canvas.dataset.ready='true';
+  syncScene();resize();fitView('perspective');animate();$('loading').classList.add('done');$('loading').setAttribute('aria-hidden','true');setTimeout(()=>$('loading').hidden=true,450);canvas.dataset.ready='true';
   new ResizeObserver(resize).observe(wrap);
  }catch(error){console.error('DEMIAND 3D:',error);fail('Не удалось загрузить сцену. Проверьте подключение и попробуйте ещё раз.');}
 }
