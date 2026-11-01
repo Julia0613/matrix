@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import {OrbitControls} from './assets/vendor/OrbitControls.js';
 import {GLTFLoader} from './assets/vendor/GLTFLoader.js';
 import {DRACOLoader} from './assets/vendor/DRACOLoader.js';
-import {createKitchen} from './3d-kitchen.js?v=20261101-30';
+import {createKitchen} from './3d-kitchen.js?v=20261101-31';
+import {labelAnchor} from './3d-labels.js?v=20261101-31';
 import {createFoodInteriors} from './3d-food.js?v=20261101-30';
 import {EffectComposer} from './assets/vendor/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from './assets/vendor/addons/postprocessing/RenderPass.js';
@@ -50,7 +51,7 @@ function initPostprocessing(){
  composer=new EffectComposer(renderer,target);composer.setPixelRatio(Math.min(devicePixelRatio,1.5));
  scenePass=new RenderPass(scene,camera);composer.addPass(scenePass);
  contactAO=new SSAOPass(scene,camera,1,1,16);contactAO.kernelRadius=.13;contactAO.minDistance=.000015;contactAO.maxDistance=.006;
- composer.addPass(contactAO);lightBloom=new UnrealBloomPass(new THREE.Vector2(1,1),.28,.30,3.8);composer.addPass(lightBloom);composer.addPass(new OutputPass());
+ composer.addPass(contactAO);lightBloom=new UnrealBloomPass(new THREE.Vector2(1,1),.34,.36,3.8);composer.addPass(lightBloom);composer.addPass(new OutputPass());
 }
 function syncPostCamera(){if(!contactAO)return;scenePass.camera=camera;contactAO.camera=camera;const m=contactAO.ssaoMaterial;m.defines.PERSPECTIVE_CAMERA=camera.isPerspectiveCamera?1:0;m.needsUpdate=true;m.uniforms.cameraProjectionMatrix.value.copy(camera.projectionMatrix);m.uniforms.cameraInverseProjectionMatrix.value.copy(camera.projectionMatrixInverse);}
 function pearlReflectionRoom(){
@@ -153,8 +154,8 @@ function bindProductPicker(){
 }
 function updateMeasurementData(){
  const info={human:state.human/100,table:state.table/100,place:state.place,models:{}};
- for(const [id,o]of objects){const b=new THREE.Box3().setFromObject(o,true),s=b.getSize(new THREE.Vector3());info.models[id]={visible:o.visible,width:s.x,height:s.y,assembledDepth:s.z,baseY:b.min.y,backZ:b.min.z,frontZ:b.max.z,rearEdgeGap:state.place==='table'?b.min.z+.4:null,housingDepth:products[id].depth,interiorFood:o.userData.interiorFood||null};}
- if(woman){const box=new THREE.Box3().setFromObject(woman,true);info.person={height:box.max.y-box.min.y,width:box.max.x-box.min.x,baseY:box.min.y,x:woman.position.x};}
+ for(const [id,o]of objects){const b=new THREE.Box3().setFromObject(o,true),s=b.getSize(new THREE.Vector3());o.userData.labelBounds=b;info.models[id]={visible:o.visible,width:s.x,height:s.y,assembledDepth:s.z,baseY:b.min.y,backZ:b.min.z,frontZ:b.max.z,rearEdgeGap:state.place==='table'?b.min.z+.4:null,housingDepth:products[id].depth,interiorFood:o.userData.interiorFood||null};}
+ if(woman){const box=new THREE.Box3().setFromObject(woman,true);woman.userData.labelBounds=box;info.person={height:box.max.y-box.min.y,width:box.max.x-box.min.x,baseY:box.min.y,x:woman.position.x};}
  canvas.dataset.measurements=JSON.stringify(info);
 }
 function subjectBounds(){const bounds=new THREE.Box3();if(woman)bounds.expandByObject(woman,true);for(const object of objects.values())if(object.visible)bounds.expandByObject(object,true);if(bounds.isEmpty())bounds.set(new THREE.Vector3(-.8,0,-.4),new THREE.Vector3(.9,1.7,.4));return bounds;}
@@ -170,17 +171,15 @@ function fitView(view=state.view){
 }
 function updateViewButtons(){for(const [id,view]of [['viewPerspective','perspective'],['viewFront','front'],['viewSide','side']]){const on=currentPreset===view;$(id).classList.toggle('active',on);$(id).setAttribute('aria-pressed',String(on))}}
 function resize(){const w=wrap.clientWidth,h=wrap.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);composer?.setSize(w,h);if(contactAO)contactAO.setSize(Math.round(w*Math.min(devicePixelRatio,1.5)*.7),Math.round(h*Math.min(devicePixelRatio,1.5)*.7));perspective.aspect=w/h;perspective.updateProjectionMatrix();if(camera===orthographic){const half=(orthographic.top-orthographic.bottom)/2;orthographic.left=-half*w/h;orthographic.right=half*w/h;orthographic.updateProjectionMatrix();}if(currentPreset!=='free')fitView(state.view);else syncPostCamera();}
-const projected=new THREE.Vector3();
-function placeLabel(id,position,visible=true){const el=$(id);if(!visible){el.style.opacity='0';return}projected.copy(position).project(camera);const on=projected.z>=-1&&projected.z<=1&&Math.abs(projected.x)<1.05&&Math.abs(projected.y)<1.05;el.style.opacity=on?'1':'0';if(on){el.style.left=`${Math.max(45,Math.min(wrap.clientWidth-45,(projected.x+1)*wrap.clientWidth/2))}px`;el.style.top=`${(1-projected.y)*wrap.clientHeight/2}px`;}}
+function placeLabel(id,object){
+ const el=$(id),anchor=object?.visible?labelAnchor(object.userData.labelBounds,camera,wrap.clientWidth,wrap.clientHeight):null;
+ el.style.opacity=anchor?'1':'0';
+ if(anchor){el.style.left=`${anchor.x}px`;el.style.top=`${anchor.y}px`;}
+}
 function updateLabels(){
  if(!camera)return;
- placeLabel('personLabel',new THREE.Vector3(state.personX,state.human/100+.09,-.60),!!woman);
- const placed=[];
- for(const [id,p]of Object.entries(products)){const object=objects.get(id);placeLabel(p.label,new THREE.Vector3(p.x,(state.place==='table'?state.table/100:0)+p.height+.10,p.z),!!object?.visible);if(!object?.visible)continue;
-  const el=$(p.label);if(el.style.opacity!=='1')continue;
-  for(let attempt=0;attempt<placed.length+1;attempt++){const r=el.getBoundingClientRect(),hit=placed.find(other=>r.left<other.right+5&&r.right>other.left-5&&r.top<other.bottom+5&&r.bottom>other.top-5);if(!hit)break;el.style.top=`${parseFloat(el.style.top)-r.height-8}px`;}
-  placed.push(el.getBoundingClientRect());
- }
+ placeLabel('personLabel',woman);
+ for(const [id,p]of Object.entries(products))placeLabel(p.label,objects.get(id));
 }
 
 function animate(){if(disposed)return;frameId=requestAnimationFrame(animate);controls.update();kitchenDesign.updateCamera(camera,state.room==='kitchen');composer.render();updateLabels();}

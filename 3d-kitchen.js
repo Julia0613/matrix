@@ -10,7 +10,7 @@ export function createKitchen(scene,renderer,environmentTexture){
  const standard=(color,roughness=.5,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness,envMap:environmentTexture,envMapIntensity:metalness>.5?.7:.38});
  const charcoal=standard('#ddd5d6',.38),rib=standard('#d5caca',.36),gold=standard('#c4bdb4',.25,.82),black=standard('#92908f',.5),ceramic=standard('#ececee',.58),wood=standard('#aa9f91',.65),glass=new THREE.MeshPhysicalMaterial({color:'#eee7e5',envMap:environmentTexture,envMapIntensity:.35,metalness:.05,roughness:.16,transparent:true,opacity:.10,depthWrite:false});
  const facade=new THREE.MeshPhysicalMaterial({color:'#eee5e3',roughness:.32,metalness:0,clearcoat:.22,clearcoatRoughness:.38,specularIntensity:.45,envMap:environmentTexture,envMapIntensity:.38});
- const warm=new THREE.MeshBasicMaterial({color:new THREE.Color('#ffc18d').multiplyScalar(8.0),toneMapped:false});
+ const warm=new THREE.MeshBasicMaterial({color:new THREE.Color('#ffb76b').multiplyScalar(9.0),toneMapped:false});
  function box(parent,w,h,d,x,y,z,material,cast=true){const geometry=new THREE.BoxGeometry(w,h,d);if(material.userData.marble){const p=geometry.attributes.position,n=geometry.attributes.normal,uv=geometry.attributes.uv;for(let i=0;i<p.count;i++){const nx=Math.abs(n.getX(i)),ny=Math.abs(n.getY(i));uv.setXY(i,(nx>.5?p.getZ(i)+z:p.getX(i)+x)/1.35,(ny>.5?p.getZ(i)+z:p.getY(i)+y)/1.35);}uv.needsUpdate=true;}const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,y,z);mesh.castShadow=cast;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
  function cylinder(parent,r1,r2,h,x,y,z,material,n=24){const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,n),material);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
  function ball(parent,rx,ry,rz,x,y,z,material){const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,20,12),material);mesh.scale.set(rx,ry,rz);mesh.position.set(x,y,z);mesh.castShadow=true;parent.add(mesh);return mesh;}
@@ -134,15 +134,15 @@ export function createKitchen(scene,renderer,environmentTexture){
 
  function grain(){const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d'),pixels=ctx.createImageData(128,128);let n=13;for(let i=0;i<pixels.data.length;i+=4){n=(n*16807)%2147483647;const g=184+(n%39);pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=g;pixels.data[i+3]=255;}ctx.putImageData(pixels,0,0);const tex=new THREE.CanvasTexture(c);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(32,32);return tex;}
  const micro=grain();stone.bumpMap=micro;stone.bumpScale=.00018;stone.roughnessMap=micro;charcoal.bumpMap=micro;charcoal.bumpScale=.000055;
- function area(parent,w,h,x,y,z,tx,ty,tz,intensity){const light=new THREE.RectAreaLight('#ffe4d3',intensity,w,h);light.position.set(x,y,z);light.lookAt(tx,ty,tz);lighting.add(light);return light;}
+ function area(parent,w,h,x,y,z,tx,ty,tz,intensity){const light=new THREE.RectAreaLight('#ffdaad',intensity,w,h);light.position.set(x,y,z);light.lookAt(tx,ty,tz);lighting.add(light);return light;}
  const daylight=new THREE.RectAreaLight('#fffafb',4.2,2.4,2.7);daylight.position.set(-3.0,2.0,1.4);daylight.lookAt(0,1,-1.3);lighting.add(daylight);
- area(back,3.9,.025,0,1.605,-1.48,0,1.05,-1.78,46);
- for(const x of [-2.22,2.22])area(ends,.24,2.15,x,1.25,-1.18,x,1.25,-1.5,5.0);
- function lightWash(w,h){const c=document.createElement('canvas');c.width=8;c.height=128;const ctx=c.getContext('2d'),g=ctx.createLinearGradient(0,0,0,128);g.addColorStop(0,'rgba(255,222,179,.32)');g.addColorStop(.22,'rgba(255,222,179,.14)');g.addColorStop(1,'rgba(255,222,179,0)');ctx.fillStyle=g;ctx.fillRect(0,0,8,128);const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;return new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,blending:THREE.NormalBlending,toneMapped:false}));}
+ area(back,3.9,.025,0,1.605,-1.48,0,1.05,-1.78,56);
+ for(const x of [-2.22,2.22])area(ends,.24,2.15,x,1.25,-1.18,x,1.25,-1.5,7.0);
+ function lightWash(w,h){const c=document.createElement('canvas');c.width=8;c.height=128;const ctx=c.getContext('2d'),g=ctx.createLinearGradient(0,0,0,128);g.addColorStop(0,'rgba(255,209,143,.42)');g.addColorStop(.22,'rgba(255,209,143,.19)');g.addColorStop(1,'rgba(255,222,179,0)');ctx.fillStyle=g;ctx.fillRect(0,0,8,128);const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;return new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,blending:THREE.NormalBlending,toneMapped:false}));}
  const frontWash=lightWash(1.83,.22);frontWash.position.set(.30,.60,.379);island.add(frontWash);
  const floorWash=lightWash(1.83,.48);floorWash.rotation.x=-Math.PI/2;floorWash.position.set(.30,.003,.59);island.add(floorWash);
- const lipLight=area(island,1.82,.018,.30,.71,.378,.30,.50,.41,15);
- const toeLight=area(island,1.82,.016,.30,.085,.35,.30,0,.56,13);
+ const lipLight=area(island,1.82,.018,.30,.71,.378,.30,.50,.41,21);
+ const toeLight=area(island,1.82,.016,.30,.085,.35,.30,0,.56,18);
  // Lighting is independent of the view-dependent cabinet visibility.
  const pendantKey=new THREE.SpotLight('#fff7ef',3,4.5,.88,.65,2);pendantKey.position.set(-.9,2.18,-1.05);pendantKey.target.position.set(-.15,.55,.15);pendantKey.castShadow=true;pendantKey.shadow.mapSize.set(1024,1024);pendantKey.shadow.camera.near=.06;pendantKey.shadow.camera.far=4.5;pendantKey.shadow.normalBias=.001;pendantKey.shadow.bias=-.00008;lighting.add(pendantKey,pendantKey.target);
 
