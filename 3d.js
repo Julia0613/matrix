@@ -3,7 +3,7 @@ import {OrbitControls} from './assets/vendor/OrbitControls.js';
 import {GLTFLoader} from './assets/vendor/GLTFLoader.js';
 import {DRACOLoader} from './assets/vendor/DRACOLoader.js';
 import {createKitchen} from './3d-kitchen.js?v=20261101-28';
-import {createFoodInteriors} from './3d-food.js?v=20261101-28';
+import {createFoodInteriors} from './3d-food.js?v=20261101-29';
 import {EffectComposer} from './assets/vendor/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from './assets/vendor/addons/postprocessing/RenderPass.js';
 import {SSAOPass} from './assets/vendor/addons/postprocessing/SSAOPass.js';
@@ -28,7 +28,7 @@ let kitchenDesign,composer,scenePass,contactAO,lightBloom;
 let disposed=false,currentPreset='perspective';
 const objects=new Map(),contactShadows=new Map(),wrap=$('canvasWrap'),canvas=$('sceneCanvas');
 const loader=new GLTFLoader(),draco=new DRACOLoader();draco.setDecoderPath('./assets/vendor/');draco.setWorkerLimit(2);loader.setDRACOLoader(draco);
-const foodInteriors=createFoodInteriors(loader);
+const foodInteriors=createFoodInteriors(loader,()=>environmentTexture);
 
 function fail(message){$('loading').hidden=true;$('sceneError').hidden=false;$('errorText').textContent=message;}
 function initRenderer(){
@@ -84,7 +84,9 @@ function normalizeProduct(gltf,id){
  object.scale.set(config.width/size.x,config.height/size.y,config.depth/(config.housingDepth||size.z));object.updateMatrixWorld(true);
  const calibratedBox=new THREE.Box3().setFromObject(object,true),center=calibratedBox.getCenter(new THREE.Vector3());
  object.position.x-=center.x;object.position.y-=calibratedBox.min.y;object.position.z-=center.z;object.updateMatrixWorld(true);
- if(id==='2400'){const replacements=new Map();object.traverse(o=>{if(!o.isMesh)return;const fix=m=>{if(m.name!=='Material #72.001')return m;if(replacements.has(m))return replacements.get(m);const glossy=m.clone();glossy.specularIntensity=1;glossy.roughness=.28;glossy.clearcoat=.25;glossy.clearcoatRoughness=.3;glossy.envMapIntensity=1.1;glossy.needsUpdate=true;replacements.set(m,glossy);return glossy;};o.material=Array.isArray(o.material)?o.material.map(fix):fix(o.material);});}
+ if(id==='2400'){const replacements=new Map();object.traverse(o=>{if(!o.isMesh)return;const fix=m=>{if(m.name!=='Material #72.001')return m;if(replacements.has(m))return replacements.get(m);const glossy=m.clone();glossy.specularIntensity=1;glossy.roughness=.28;glossy.clearcoat=.25;glossy.clearcoatRoughness=.3;glossy.envMap=environmentTexture;glossy.envMapIntensity=1.1;glossy.needsUpdate=true;replacements.set(m,glossy);return glossy;};o.material=Array.isArray(o.material)?o.material.map(fix):fix(o.material);});}
+ const displayName=id==='2200'?'2200 CURRENT Display200 suppliedarchive':id==='2400'?'Material #127.001':null;
+ if(displayName){const copies=new Map();object.traverse(o=>{if(!o.isMesh)return;const keepReadable=m=>{if(m.name!==displayName)return m;if(copies.has(m))return copies.get(m);const copy=m.clone();copy.envMap=environmentTexture;copy.envMapIntensity=.12;copy.roughness=.22;copy.needsUpdate=true;copies.set(m,copy);return copy;};o.material=Array.isArray(o.material)?o.material.map(keepReadable):keepReadable(o.material);});}
  const group=new THREE.Group();group.name=config.name;group.add(object);scene.add(group);prepareMeshes(group);objects.set(id,group);
  config.assembledSize=new THREE.Box3().setFromObject(group,true).getSize(new THREE.Vector3());
 }
