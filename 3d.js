@@ -2,12 +2,13 @@ import * as THREE from 'three';
 import {OrbitControls} from './assets/vendor/OrbitControls.js';
 import {GLTFLoader} from './assets/vendor/GLTFLoader.js';
 import {DRACOLoader} from './assets/vendor/DRACOLoader.js';
-import {createKitchen} from './3d-kitchen.js?v=20261101-21';
-import {createFoodInteriors} from './3d-food.js?v=20261101-21';
+import {createKitchen} from './3d-kitchen.js?v=20261101-28';
+import {createFoodInteriors} from './3d-food.js?v=20261101-28';
 import {EffectComposer} from './assets/vendor/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from './assets/vendor/addons/postprocessing/RenderPass.js';
 import {SSAOPass} from './assets/vendor/addons/postprocessing/SSAOPass.js';
 import {OutputPass} from './assets/vendor/addons/postprocessing/OutputPass.js';
+import {UnrealBloomPass} from './assets/vendor/addons/postprocessing/UnrealBloomPass.js';
 
 const $=id=>document.getElementById(id),params=new URLSearchParams(location.search);
 const clamp=(v,min,max,fallback)=>Number.isFinite(Number(v))&&v!==null?Math.max(min,Math.min(max,Number(v))):fallback;
@@ -23,7 +24,7 @@ let pickerCategory='Все',pickerSearch='',selectionRevision=0,selectionTouched
 const pendingLoads=new Map(),loadErrors=new Set();
 const fmt=n=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:1}).format(n);
 let renderer,scene,perspective,orthographic,camera,controls,woman,island,kitchen,studioGrid,ground,frameId,environmentTexture;
-let kitchenDesign,composer,scenePass,contactAO;
+let kitchenDesign,composer,scenePass,contactAO,lightBloom;
 let disposed=false,currentPreset='perspective';
 const objects=new Map(),contactShadows=new Map(),wrap=$('canvasWrap'),canvas=$('sceneCanvas');
 const loader=new GLTFLoader(),draco=new DRACOLoader();draco.setDecoderPath('./assets/vendor/');draco.setWorkerLimit(2);loader.setDRACOLoader(draco);
@@ -33,13 +34,13 @@ function fail(message){$('loading').hidden=true;$('sceneError').hidden=false;$('
 function initRenderer(){
  renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
  renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
- renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.96;renderer.outputColorSpace=THREE.SRGBColorSpace;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.10;renderer.outputColorSpace=THREE.SRGBColorSpace;
  scene=new THREE.Scene();scene.background=new THREE.Color('#eee9e1');
  perspective=new THREE.PerspectiveCamera(34,1,.03,40);orthographic=new THREE.OrthographicCamera(-2,2,2,-2,.03,40);camera=perspective;
- const hemi=new THREE.HemisphereLight('#f6f6f8','#808083',.5);scene.add(hemi);
- const sun=new THREE.DirectionalLight('#fffaf5',1.7);sun.position.set(-3,5,4);sun.castShadow=true;
+ const hemi=new THREE.HemisphereLight('#fffaf8','#8b8588',.46);scene.add(hemi);
+ const sun=new THREE.DirectionalLight('#fff8f3',1.45);sun.position.set(-3,5,4);sun.castShadow=true;
  sun.shadow.mapSize.set(innerWidth<760?1024:2048,innerWidth<760?1024:2048);sun.shadow.camera.left=-3;sun.shadow.camera.right=3;sun.shadow.camera.top=3;sun.shadow.camera.bottom=-3;sun.shadow.camera.near=.1;sun.shadow.camera.far=12;sun.shadow.normalBias=.0008;sun.shadow.bias=-.00008;sun.shadow.radius=3;scene.add(sun);
- const fill=new THREE.DirectionalLight('#f1f3f8',.65);fill.position.set(3,3,2);scene.add(fill);
+ const fill=new THREE.DirectionalLight('#fffaff',.48);fill.position.set(3,3,2);scene.add(fill);
  const pmrem=new THREE.PMREMGenerator(renderer),room=pearlReflectionRoom();environmentTexture=pmrem.fromScene(room,.035).texture;scene.environment=environmentTexture;scene.environmentIntensity=1.2;room.traverse(o=>{o.geometry?.dispose();o.material?.dispose()});pmrem.dispose();
  setupControls();initPostprocessing();
  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();fail('Браузер приостановил 3D. Обновите просмотр, чтобы продолжить.')});
@@ -49,16 +50,18 @@ function initPostprocessing(){
  composer=new EffectComposer(renderer,target);composer.setPixelRatio(Math.min(devicePixelRatio,1.5));
  scenePass=new RenderPass(scene,camera);composer.addPass(scenePass);
  contactAO=new SSAOPass(scene,camera,1,1,16);contactAO.kernelRadius=.13;contactAO.minDistance=.000015;contactAO.maxDistance=.006;
- composer.addPass(contactAO);composer.addPass(new OutputPass());
+ composer.addPass(contactAO);lightBloom=new UnrealBloomPass(new THREE.Vector2(1,1),.28,.30,3.8);composer.addPass(lightBloom);composer.addPass(new OutputPass());
 }
 function syncPostCamera(){if(!contactAO)return;scenePass.camera=camera;contactAO.camera=camera;const m=contactAO.ssaoMaterial;m.defines.PERSPECTIVE_CAMERA=camera.isPerspectiveCamera?1:0;m.needsUpdate=true;m.uniforms.cameraProjectionMatrix.value.copy(camera.projectionMatrix);m.uniforms.cameraInverseProjectionMatrix.value.copy(camera.projectionMatrixInverse);}
 function pearlReflectionRoom(){
- const room=new THREE.Scene();room.background=new THREE.Color('#989897');
- const shell=new THREE.Mesh(new THREE.SphereGeometry(10,24,16),new THREE.MeshBasicMaterial({color:'#a7a7a6',side:THREE.BackSide}));room.add(shell);
+ const room=new THREE.Scene();room.background=new THREE.Color('#38363a');
+ const shell=new THREE.Mesh(new THREE.SphereGeometry(10,24,16),new THREE.MeshBasicMaterial({color:'#514f53',side:THREE.BackSide}));room.add(shell);
  function panel(w,h,x,y,z,color,power){const m=new THREE.MeshBasicMaterial({color:new THREE.Color(color).multiplyScalar(power),side:THREE.DoubleSide,toneMapped:false});const p=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);p.position.set(x,y,z);p.lookAt(0,.9,0);room.add(p);}
- panel(2.0,3.3,-4.5,2.2,3.8,'#fffdf9',1.1);panel(1.1,3.5,4.7,2.0,2.1,'#edf2f8',1.3);
- panel(2.0,1.3,0,3.3,5.7,'#fffdfa',.9);panel(4.4,.15,0,2.6,-3.8,'#fff0df',.8);
- panel(3.1,.11,-.5,4.2,0,'#fffbf5',1.0);return room;
+ panel(2.0,3.3,-4.5,2.2,3.8,'#fff9f5',6.0);panel(1.1,3.5,4.7,2.0,2.1,'#fff7ff',3.5);
+ panel(2.0,1.3,0,3.3,5.7,'#fff9f7',2.0);panel(4.4,.15,0,2.6,-3.8,'#ffe9d8',3.2);
+ panel(3.1,.11,-.5,4.2,0,'#fff4ee',2.8);
+ panel(2.2,3.5,-2,-.5,4,'#fff5f2',3.8);panel(.8,3.0,.8,-.4,4.5,'#fff9f7',2.4);
+ const reflectedFloor=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshBasicMaterial({color:'#ddd6d5',side:THREE.DoubleSide}));reflectedFloor.rotation.x=-Math.PI/2;reflectedFloor.position.y=-3.5;room.add(reflectedFloor);return room;
 }
 function setupControls(){
  controls?.dispose();controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.09;controls.minDistance=.7;controls.maxDistance=11;controls.minZoom=.45;controls.maxZoom=4;
@@ -81,6 +84,7 @@ function normalizeProduct(gltf,id){
  object.scale.set(config.width/size.x,config.height/size.y,config.depth/(config.housingDepth||size.z));object.updateMatrixWorld(true);
  const calibratedBox=new THREE.Box3().setFromObject(object,true),center=calibratedBox.getCenter(new THREE.Vector3());
  object.position.x-=center.x;object.position.y-=calibratedBox.min.y;object.position.z-=center.z;object.updateMatrixWorld(true);
+ if(id==='2400'){const replacements=new Map();object.traverse(o=>{if(!o.isMesh)return;const fix=m=>{if(m.name!=='Material #72.001')return m;if(replacements.has(m))return replacements.get(m);const glossy=m.clone();glossy.specularIntensity=1;glossy.roughness=.28;glossy.clearcoat=.25;glossy.clearcoatRoughness=.3;glossy.envMapIntensity=1.1;glossy.needsUpdate=true;replacements.set(m,glossy);return glossy;};o.material=Array.isArray(o.material)?o.material.map(fix):fix(o.material);});}
  const group=new THREE.Group();group.name=config.name;group.add(object);scene.add(group);prepareMeshes(group);objects.set(id,group);
  config.assembledSize=new THREE.Box3().setFromObject(group,true).getSize(new THREE.Vector3());
 }
@@ -112,7 +116,7 @@ function layoutProducts(){
 function showSelectionNotice(message){$('selectionNotice').hidden=!message;$('selectionNotice').textContent=message;}
 function renderSelected(){
  $('selectedCount').textContent=`${state.selected.size} из ${MAX_PRODUCTS}`;
- $('selectedModels').innerHTML=[...state.selected].map(id=>{const p=products[id],loading=!objects.has(id)&&!loadErrors.has(id);return `<div class="selected-model"><img src="${esc(p.image)}" alt="" width="37" height="48"><div><strong>${esc(p.name)}</strong><small>${esc(p.sku)}</small><span>${[p.width*100,p.height*100,p.depth*100].map(fmt).join(' × ')} см</span>${loading?'<em>Загружаем 3D…</em>':''}</div><button type="button" data-remove="${esc(id)}" aria-label="Убрать ${esc(p.name)} со сцены">×</button></div>`}).join('')||'<p class="empty-selection">Выберите товары, чтобы поставить их на сцену.</p>';
+ $('selectedModels').innerHTML=[...state.selected].map(id=>{const p=products[id],loading=!objects.has(id)&&!loadErrors.has(id);return `<div class="selected-model"><img src="${esc(p.image)}" alt="" width="37" height="48"><div><strong>${esc(p.name)}</strong><small>${esc(p.sku)}</small><span>${[p.width*100,p.height*100,p.depth*100].map(fmt).join(' × ')} см</span>${loading?'<em>Загружаем 3D…</em>':''}</div><button type="button" data-remove="${esc(id)}" aria-label="Убрать ${esc(p.name)} со сцены"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M1 1 11 11M11 1 1 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>`}).join('')||'<p class="empty-selection">Выберите товары, чтобы поставить их на сцену.</p>';
 }
 function renderPicker(){
  const active=document.activeElement,focusProduct=active?.dataset?.product,focusCategory=active?.dataset?.category;
@@ -124,7 +128,7 @@ function renderPicker(){
 }
 async function ensureProduct(id){
  if(objects.has(id))return;if(pendingLoads.has(id))return pendingLoads.get(id);
- const p=products[id],promise=(async()=>{try{normalizeProduct(await loader.loadAsync(p.path+'?v=20261101-21'),id);try{await foodInteriors.attach(id,objects.get(id));}catch(error){console.warn('DEMIAND: interior unavailable',id,error);}makeContactShadow(id,p.width*1.3,p.assembledSize.z*1.2);loadErrors.delete(id);}catch(error){loadErrors.add(id);state.selected.delete(id);console.warn('DEMIAND: model unavailable',id,error);showSelectionNotice(`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`);$('pickerStatus').textContent=`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`;}finally{pendingLoads.delete(id);syncScene();renderPicker();}})();pendingLoads.set(id,promise);return promise;
+ const p=products[id],promise=(async()=>{try{normalizeProduct(await loader.loadAsync(p.path+'?v=20261101-28'),id);try{await foodInteriors.attach(id,objects.get(id));}catch(error){console.warn('DEMIAND: interior unavailable',id,error);}makeContactShadow(id,p.width*1.3,p.assembledSize.z*1.2);loadErrors.delete(id);}catch(error){loadErrors.add(id);state.selected.delete(id);console.warn('DEMIAND: model unavailable',id,error);showSelectionNotice(`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`);$('pickerStatus').textContent=`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`;}finally{pendingLoads.delete(id);syncScene();renderPicker();}})();pendingLoads.set(id,promise);return promise;
 }
 async function loadSelected(){await Promise.all([...state.selected].map(ensureProduct));}
 async function toggleProduct(id,on){
@@ -201,11 +205,11 @@ async function start(){
  try{
   initRenderer();buildKitchen();makeContactShadow('woman',.42,.34);for(const [id,p]of Object.entries(products)){const label=document.createElement('div');label.id=p.label;label.className='label product-label';label.innerHTML=`<strong>${esc(p.name)}</strong><span>Высота ${fmt(p.height*100)} см</span>`;$('sceneLabels').append(label);}bindUI();syncScene();nonBreakingCopy();resize();
   $('loadingProgress').style.width='30%';
-  await Promise.all([kitchenDesign.ready,loadSelected(),(async()=>{normalizeWoman(await loader.loadAsync('assets/models/woman-original.glb?v=20261101-21'));})()]);
+  await Promise.all([kitchenDesign.ready,loadSelected(),(async()=>{normalizeWoman(await loader.loadAsync('assets/models/woman-original.glb?v=20261101-28'));})()]);
   $('loadingProgress').style.width='100%';
   syncScene();resize();fitView('perspective');animate();$('loading').classList.add('done');$('loading').setAttribute('aria-hidden','true');setTimeout(()=>$('loading').hidden=true,450);canvas.dataset.ready='true';
   new ResizeObserver(resize).observe(wrap);
  }catch(error){console.error('DEMIAND 3D:',error);fail('Не удалось загрузить сцену. Проверьте подключение и попробуйте ещё раз.');}
 }
-window.addEventListener('pagehide',()=>{disposed=true;cancelAnimationFrame(frameId);controls?.dispose();draco.dispose();composer?.dispose();contactAO?.dispose();renderer?.dispose();environmentTexture?.dispose();});
+window.addEventListener('pagehide',()=>{disposed=true;cancelAnimationFrame(frameId);controls?.dispose();kitchenDesign?.dispose();draco.dispose();composer?.dispose();contactAO?.dispose();lightBloom?.dispose();renderer?.dispose();environmentTexture?.dispose();});
 start();

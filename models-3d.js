@@ -12,7 +12,7 @@ window.MODELS_3D = {
     "rotationY": 0
   },
   "2200": {
-    "path": "assets/models/2200-studio.glb",
+    "path": "assets/models/2200-studio-v4.glb",
     "rotationY": 0
   },
   "2300": {

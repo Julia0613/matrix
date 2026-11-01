@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {Reflector} from './assets/vendor/addons/objects/Reflector.js';
 import {RectAreaLightUniformsLib} from './assets/vendor/RectAreaLightUniformsLib.js';
 
 // Original, meter-based geometry with a stone texture generated for this project.
@@ -7,9 +8,9 @@ export function createKitchen(scene,renderer){
  const group=new THREE.Group(),island=new THREE.Group(),lighting=new THREE.Group();scene.add(group,island,lighting);
  const back=new THREE.Group(),ends=new THREE.Group(),pendants=new THREE.Group();group.add(back,ends,pendants);
  const standard=(color,roughness=.5,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
- const charcoal=standard('#c9c8c7',.4),rib=standard('#c6c3c1',.4),gold=standard('#c4bdb4',.25,.82),black=standard('#92908f',.5),ceramic=standard('#ececee',.58),wood=standard('#aa9f91',.65),glass=new THREE.MeshPhysicalMaterial({color:'#dce5ec',metalness:.05,roughness:.16,transparent:true,opacity:.10,depthWrite:false});
- const facade=new THREE.MeshPhysicalMaterial({color:'#d3cfcd',roughness:.34,metalness:0,clearcoat:.3,clearcoatRoughness:.32,specularIntensity:.55});
- const warm=new THREE.MeshBasicMaterial({color:'#ffe1c9',toneMapped:false});
+ const charcoal=standard('#ddd5d6',.38),rib=standard('#d5caca',.36),gold=standard('#c4bdb4',.25,.82),black=standard('#92908f',.5),ceramic=standard('#ececee',.58),wood=standard('#aa9f91',.65),glass=new THREE.MeshPhysicalMaterial({color:'#dce5ec',metalness:.05,roughness:.16,transparent:true,opacity:.10,depthWrite:false});
+ const facade=new THREE.MeshPhysicalMaterial({color:'#e9e1e0',roughness:.28,metalness:0,clearcoat:.3,clearcoatRoughness:.32,specularIntensity:.55});
+ const warm=new THREE.MeshBasicMaterial({color:new THREE.Color('#ffc18d').multiplyScalar(8.0),toneMapped:false});
  function box(parent,w,h,d,x,y,z,material,cast=true){const geometry=new THREE.BoxGeometry(w,h,d);if(material.userData.marble){const p=geometry.attributes.position,n=geometry.attributes.normal,uv=geometry.attributes.uv;for(let i=0;i<p.count;i++){const nx=Math.abs(n.getX(i)),ny=Math.abs(n.getY(i));uv.setXY(i,(nx>.5?p.getZ(i)+z:p.getX(i)+x)/1.35,(ny>.5?p.getZ(i)+z:p.getY(i)+y)/1.35);}uv.needsUpdate=true;}const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,y,z);mesh.castShadow=cast;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
  function cylinder(parent,r1,r2,h,x,y,z,material,n=24){const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,n),material);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
  function ball(parent,rx,ry,rz,x,y,z,material){const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,20,12),material);mesh.scale.set(rx,ry,rz);mesh.position.set(x,y,z);mesh.castShadow=true;parent.add(mesh);return mesh;}
@@ -21,9 +22,17 @@ export function createKitchen(scene,renderer){
  const floorMat=new THREE.MeshPhysicalMaterial({color:'#dad8d7',map:floorMap,roughness:.48,metalness:0,envMapIntensity:.35,specularIntensity:.4}),studioMat=standard('#e7e9ee',.85);
  floorMat.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.40,0.395,0.395), 0.90);');};floorMat.customProgramCacheKey=()=> 'pearl-floor-v5';
  const ground=new THREE.Mesh(new THREE.PlaneGeometry(12,12),floorMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.0001;ground.receiveShadow=true;scene.add(ground);
+ const reflectionShader={...Reflector.ReflectorShader,uniforms:THREE.UniformsUtils.clone(Reflector.ReflectorShader.uniforms)};
+ reflectionShader.fragmentShader=reflectionShader.fragmentShader.replace('vec4 base = texture2DProj( tDiffuse, vUv );',`vec2 uv=vUv.xy/vUv.w;vec2 blur=vec2(1.7/512.0);vec4 base=texture2D(tDiffuse,uv)*0.40; base+=(texture2D(tDiffuse,uv+vec2(blur.x,0.0))+texture2D(tDiffuse,uv-vec2(blur.x,0.0))+texture2D(tDiffuse,uv+vec2(0.0,blur.y))+texture2D(tDiffuse,uv-vec2(0.0,blur.y)))*0.15;`).replace('vec4( blendOverlay( base.rgb, color ), 1.0 )','vec4( base.rgb, 0.17 )');
+ const floorReflection=new Reflector(new THREE.PlaneGeometry(12,12),{textureWidth:512,textureHeight:512,clipBias:.0005,multisample:0,shader:reflectionShader});floorReflection.rotation.x=-Math.PI/2;floorReflection.position.y=.0001;floorReflection.material.transparent=true;floorReflection.material.depthWrite=false;scene.add(floorReflection);
+ const topShader={...reflectionShader,uniforms:THREE.UniformsUtils.clone(reflectionShader.uniforms),fragmentShader:reflectionShader.fragmentShader.replace('vec4( base.rgb, 0.17 )','vec4( base.rgb, 0.18 )')};
+ const topReflection=new Reflector(new THREE.PlaneGeometry(1.94,.80),{textureWidth:innerWidth<760?256:512,textureHeight:innerWidth<760?256:512,clipBias:.0004,multisample:0,shader:topShader});topReflection.rotation.x=-Math.PI/2;topReflection.position.set(.30,.7603,0);topReflection.material.transparent=true;topReflection.material.depthWrite=false;island.add(topReflection);
+ let reflecting=false;for(const mirror of [floorReflection,topReflection]){const render=mirror.onBeforeRender.bind(mirror);mirror.onBeforeRender=(renderer,scene,camera,...rest)=>{if(reflecting||scene.overrideMaterial)return;reflecting=true;const other=mirror===floorReflection?topReflection:floorReflection,visible=other.visible;other.visible=false;try{render(renderer,scene,camera,...rest);}finally{other.visible=visible;reflecting=false;}};}
+
+
  const grid=new THREE.GridHelper(8,32,'#c2c8d0','#d8dde5');grid.position.y=-.001;grid.material.transparent=true;grid.material.opacity=.3;scene.add(grid);
  // Only a rear wall: no front wall, side wall or ceiling can block the camera.
- const wall=new THREE.Mesh(new THREE.PlaneGeometry(6.2,2.75),standard('#cac7c6',.85));wall.position.set(0,1.375,-1.86);wall.receiveShadow=true;back.add(wall);
+ const wall=new THREE.Mesh(new THREE.PlaneGeometry(6.2,2.75),standard('#ddd4d5',.85));wall.position.set(0,1.375,-1.86);wall.receiveShadow=true;back.add(wall);
  box(back,3.98,.7,.028,0,1.24,-1.835,backStone,false);
  // Base cabinets, each with a fine brass reveal and recessed plinth.
  box(back,3.98,.1,.53,0,.05,-1.52,black);
@@ -125,10 +134,10 @@ export function createKitchen(scene,renderer){
 
  function grain(){const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d'),pixels=ctx.createImageData(128,128);let n=13;for(let i=0;i<pixels.data.length;i+=4){n=(n*16807)%2147483647;const g=184+(n%39);pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=g;pixels.data[i+3]=255;}ctx.putImageData(pixels,0,0);const tex=new THREE.CanvasTexture(c);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(32,32);return tex;}
  const micro=grain();stone.bumpMap=micro;stone.bumpScale=.00018;stone.roughnessMap=micro;charcoal.bumpMap=micro;charcoal.bumpScale=.000055;
- function area(parent,w,h,x,y,z,tx,ty,tz,intensity){const light=new THREE.RectAreaLight('#ffead6',intensity,w,h);light.position.set(x,y,z);light.lookAt(tx,ty,tz);lighting.add(light);return light;}
- const daylight=new THREE.RectAreaLight('#fafbff',3.5,2.4,2.7);daylight.position.set(-3.0,2.0,1.4);daylight.lookAt(0,1,-1.3);lighting.add(daylight);
- area(back,3.9,.025,0,1.605,-1.48,0,1.05,-1.78,32);
- for(const x of [-2.22,2.22])area(ends,.24,2.15,x,1.25,-1.18,x,1.25,-1.5,3.2);
+ function area(parent,w,h,x,y,z,tx,ty,tz,intensity){const light=new THREE.RectAreaLight('#ffe4d3',intensity,w,h);light.position.set(x,y,z);light.lookAt(tx,ty,tz);lighting.add(light);return light;}
+ const daylight=new THREE.RectAreaLight('#fffafb',4.2,2.4,2.7);daylight.position.set(-3.0,2.0,1.4);daylight.lookAt(0,1,-1.3);lighting.add(daylight);
+ area(back,3.9,.025,0,1.605,-1.48,0,1.05,-1.78,46);
+ for(const x of [-2.22,2.22])area(ends,.24,2.15,x,1.25,-1.18,x,1.25,-1.5,5.0);
  function lightWash(w,h){const c=document.createElement('canvas');c.width=8;c.height=128;const ctx=c.getContext('2d'),g=ctx.createLinearGradient(0,0,0,128);g.addColorStop(0,'rgba(255,222,179,.32)');g.addColorStop(.22,'rgba(255,222,179,.14)');g.addColorStop(1,'rgba(255,222,179,0)');ctx.fillStyle=g;ctx.fillRect(0,0,8,128);const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;return new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map,transparent:true,depthWrite:false,blending:THREE.NormalBlending,toneMapped:false}));}
  const frontWash=lightWash(1.83,.22);frontWash.position.set(.30,.60,.379);island.add(frontWash);
  const floorWash=lightWash(1.83,.48);floorWash.rotation.x=-Math.PI/2;floorWash.position.set(.30,.003,.59);island.add(floorWash);
@@ -138,7 +147,7 @@ export function createKitchen(scene,renderer){
  const pendantKey=new THREE.SpotLight('#fff7ef',3,4.5,.88,.65,2);pendantKey.position.set(-.9,2.18,-1.05);pendantKey.target.position.set(-.15,.55,.15);pendantKey.castShadow=true;pendantKey.shadow.mapSize.set(1024,1024);pendantKey.shadow.camera.near=.06;pendantKey.shadow.camera.far=4.5;pendantKey.shadow.normalBias=.001;pendantKey.shadow.bias=-.00008;lighting.add(pendantKey,pendantKey.target);
 
  function setHeight(h,visible=true){
-  island.visible=visible;lipLight.visible=toeLight.visible=visible;
+  island.visible=visible;topReflection.position.y=h+.0003;lipLight.visible=toeLight.visible=visible;
   frontWash.position.y=h-.16;lipLight.position.y=h-.053;lipLight.lookAt(.30,h-.25,.41);
   top.position.y=h-.02;core.scale.y=(h-.16)/.6;core.position.y=(h-.16)/2+.1;
   for(const [p,t]of parts){if(t==='slab'){p.scale.y=h/.76;p.position.y=h/2;}else if(t==='under')p.position.y=h-.055;else if(t==='reveal')p.position.y=h-.072;}
@@ -147,8 +156,9 @@ export function createKitchen(scene,renderer){
  setHeight(.76);
  function setEnvironment(on){group.visible=on;lighting.visible=on;ground.material=on?floorMat:studioMat;grid.visible=!on;}
  function updateCamera(camera,on){
+  floorReflection.visible=on&&camera.isPerspectiveCamera;topReflection.visible=camera.isPerspectiveCamera;
   // The rear joinery disappears from reverse viewpoints instead of blocking the appliances.
   const open=on&&camera.position.z>-.95;back.visible=open;ends.visible=open&&Math.abs(camera.position.x)<3.6;pendants.visible=open&&camera.position.y<2.45;
  }
- return {group,island,ground,grid,setHeight,setEnvironment,updateCamera,ready};
+ return {group,island,ground,grid,setHeight,setEnvironment,updateCamera,ready,dispose(){floorReflection.dispose();topReflection.dispose();}};
 }
