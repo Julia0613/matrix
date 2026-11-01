@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import {OrbitControls} from './assets/vendor/OrbitControls.js';
 import {GLTFLoader} from './assets/vendor/GLTFLoader.js';
 import {DRACOLoader} from './assets/vendor/DRACOLoader.js';
-import {createKitchen} from './3d-kitchen.js?v=20261101-33';
+import {createKitchen} from './3d-kitchen.js?v=20261102-34';
 import {labelAnchor} from './3d-labels.js?v=20261101-31';
-import {createFoodInteriors} from './3d-food.js?v=20261101-33';
+import {createFoodInteriors} from './3d-food.js?v=20261102-34';
 import {EffectComposer} from './assets/vendor/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from './assets/vendor/addons/postprocessing/RenderPass.js';
 import {SSAOPass} from './assets/vendor/addons/postprocessing/SSAOPass.js';
@@ -29,9 +29,7 @@ const fmt=n=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:1}).format(n);
 let renderer,scene,perspective,orthographic,camera,controls,woman,island,kitchen,studioGrid,ground,frameId=0,environmentTexture,productEnvironmentTexture;
 let kitchenDesign,composer,scenePass,contactAO,lightBloom;
 let disposed=false,sceneReady=false,currentPreset='perspective',renderedFrames=0;
-const compactView=matchMedia('(max-width: 760px)').matches;
-// Keep existing lamp slots when a product is removed: changing light count recompiles every lit material.
-const chamberLights=[],objects=new Map(),contactShadows=new Map(),wrap=$('canvasWrap'),canvas=$('sceneCanvas');
+const objects=new Map(),contactShadows=new Map(),wrap=$('canvasWrap'),canvas=$('sceneCanvas');
 const loader=new GLTFLoader(),draco=new DRACOLoader();draco.setDecoderPath('./assets/vendor/');draco.setWorkerLimit(2);loader.setDRACOLoader(draco);
 const foodInteriors=createFoodInteriors({loadAsync:loadGLB},()=>environmentTexture);
 
@@ -45,8 +43,8 @@ function pauseRendering(){cancelAnimationFrame(frameId);frameId=0;}
 
 function fail(message){$('loading').hidden=true;$('sceneError').hidden=false;$('errorText').textContent=message;}
 function initRenderer(){
- renderer=new THREE.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
- renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;
+ renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
+ renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.10;renderer.outputColorSpace=THREE.SRGBColorSpace;
  scene=new THREE.Scene();scene.background=new THREE.Color('#eee9e1');
  perspective=new THREE.PerspectiveCamera(34,1,.03,40);orthographic=new THREE.OrthographicCamera(-2,2,2,-2,.03,40);camera=perspective;
@@ -64,7 +62,7 @@ function initRenderer(){
  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();sceneReady=false;pauseRendering();fail('Браузер приостановил 3D. Обновите просмотр, чтобы продолжить.')});
 }
 function initPostprocessing(){
- const target=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:compactView?2:4});
+ const target=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:innerWidth<760?2:4});
  composer=new EffectComposer(renderer,target);composer.setPixelRatio(Math.min(devicePixelRatio,1.5));
  scenePass=new RenderPass(scene,camera);composer.addPass(scenePass);
  contactAO=new SSAOPass(scene,camera,1,1,16);contactAO.kernelRadius=.13;contactAO.minDistance=.000015;contactAO.maxDistance=.006;
@@ -96,11 +94,8 @@ function makeContactShadow(id,w,d){
 function buildKitchen(){kitchenDesign=createKitchen(scene,renderer,environmentTexture);kitchen=kitchenDesign.group;island=kitchenDesign.island;ground=kitchenDesign.ground;studioGrid=kitchenDesign.grid;}
 let islandHeight,islandVisible;
 function buildIsland(){const h=state.table/100,visible=state.place==='table';if(h===islandHeight&&visible===islandVisible)return;kitchenDesign.setHeight(h,visible);islandHeight=h;islandVisible=visible;}
-// Precise vertex bounds are calculated once, then transformed with each model.
 function cacheBounds(root){root.updateMatrixWorld(true);root.userData.localBounds=new THREE.Box3().setFromObject(root,true).applyMatrix4(root.matrixWorld.clone().invert());}
 function worldBounds(root){return root.userData.localBounds.clone().applyMatrix4(root.matrixWorld);}
-function retainChamberLights(root){const lights=[];root.updateMatrixWorld(true);root.traverse(o=>{if(o.isPointLight)lights.push(o);});root.userData.chamberLights=lights.map(light=>({color:light.color.clone(),intensity:light.intensity,distance:light.distance,position:root.worldToLocal(light.getWorldPosition(new THREE.Vector3()))}));for(const light of lights)light.removeFromParent();}
-function syncChamberLights(){let index=0;for(const [id,root]of objects){if(!state.selected.has(id))continue;for(const source of root.userData.chamberLights||[]){let light=chamberLights[index++];if(!light){light=new THREE.PointLight('#ffffff',0,0,2);scene.add(light);chamberLights.push(light);}light.color.copy(source.color);light.intensity=source.intensity;light.distance=source.distance;light.position.copy(source.position).applyMatrix4(root.matrixWorld);}}for(;index<chamberLights.length;index++)chamberLights[index].intensity=0;}
 function prepareMeshes(root){root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.isSkinnedMesh)o.frustumCulled=false;}});}
 function normalizeProduct(gltf,id){
  const config=products[id],object=gltf.scene;if(config.rotationY)object.rotation.y+=config.rotationY;object.updateMatrixWorld(true);
@@ -133,7 +128,7 @@ function syncScene(){
  if(woman){woman.scale.setScalar(state.human/100);woman.position.set(state.personX,0,-.60);woman.updateMatrixWorld(true);}
  for(const [id,object]of objects){const p=products[id];object.visible=state.selected.has(id);object.position.set(p.x,state.place==='table'?state.table/100:0,p.z);object.updateMatrixWorld(true);}
 
- buildIsland();syncChamberLights();renderer.shadowMap.needsUpdate=true;
+ buildIsland();
  for(const [id,shadow]of contactShadows){if(id==='woman'){shadow.position.set(state.personX,.0003,-.60+.065*state.human/164);shadow.scale.setScalar(state.human/164);}else{const p=products[id];shadow.position.set(p.x,(state.place==='table'?state.table/100:0)+.0003,p.z);shadow.visible=state.selected.has(id)&&objects.has(id);}}
  kitchenDesign.setEnvironment(state.room==='kitchen');
  scene.background.set(state.room==='kitchen'?'#ccc8c6':'#eef0f5');$('personLabel').textContent=`Рост ${state.human} см`;
@@ -165,7 +160,7 @@ function updatePickerSelection(){
 }
 async function ensureProduct(id){
  if(objects.has(id))return;if(pendingLoads.has(id))return pendingLoads.get(id);
- const p=products[id],promise=(async()=>{try{const gltf=await loadGLB(p.path+'?v=20261101-28');if(disposed)return;normalizeProduct(gltf,id);try{await foodInteriors.attach(id,objects.get(id));}catch(error){console.warn('DEMIAND: interior unavailable',id,error);}if(disposed)return;retainChamberLights(objects.get(id));cacheBounds(objects.get(id));makeContactShadow(id,p.width*1.3,p.assembledSize.z*1.2);loadErrors.delete(id);}catch(error){if(disposed)return;loadErrors.add(id);state.selected.delete(id);console.warn('DEMIAND: model unavailable',id,error);showSelectionNotice(`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`);$('pickerStatus').textContent=`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`;}finally{pendingLoads.delete(id);if(!disposed&&sceneReady){syncScene();updatePickerSelection();}}})();pendingLoads.set(id,promise);return promise;
+ const p=products[id],promise=(async()=>{try{const gltf=await loadGLB(p.path+'?v=20261101-28');if(disposed)return;normalizeProduct(gltf,id);try{await foodInteriors.attach(id,objects.get(id));}catch(error){console.warn('DEMIAND: interior unavailable',id,error);}if(disposed)return;cacheBounds(objects.get(id));makeContactShadow(id,p.width*1.3,p.assembledSize.z*1.2);loadErrors.delete(id);}catch(error){if(disposed)return;loadErrors.add(id);state.selected.delete(id);console.warn('DEMIAND: model unavailable',id,error);showSelectionNotice(`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`);$('pickerStatus').textContent=`Не удалось загрузить ${p.name}. Попробуйте выбрать товар ещё раз.`;}finally{pendingLoads.delete(id);if(!disposed&&sceneReady){syncScene();updatePickerSelection();}}})();pendingLoads.set(id,promise);return promise;
 }
 async function loadSelected(){await Promise.all([...state.selected].map(ensureProduct));}
 async function toggleProduct(id,on){
@@ -208,7 +203,7 @@ function fitView(view=state.view){
 }
 function updateViewButtons(){for(const [id,view]of [['viewPerspective','perspective'],['viewFront','front'],['viewSide','side']]){const on=currentPreset===view;$(id).classList.toggle('active',on);$(id).setAttribute('aria-pressed',String(on))}}
 let viewportWidth=0,viewportHeight=0;
-function resize(){const w=wrap.clientWidth,h=wrap.clientHeight;if(!w||!h||(w===viewportWidth&&h===viewportHeight))return;viewportWidth=w;viewportHeight=h;renderer.setSize(w,h,false);composer?.setSize(w,h);if(contactAO)contactAO.setSize(Math.round(w*Math.min(devicePixelRatio,1.5)*(compactView?.5:.7)),Math.round(h*Math.min(devicePixelRatio,1.5)*(compactView?.5:.7)));perspective.aspect=w/h;perspective.updateProjectionMatrix();if(camera===orthographic){const half=(orthographic.top-orthographic.bottom)/2;orthographic.left=-half*w/h;orthographic.right=half*w/h;orthographic.updateProjectionMatrix();}if(currentPreset!=='free')fitView(state.view);else syncPostCamera();requestRender();}
+function resize(){const w=wrap.clientWidth,h=wrap.clientHeight;if(!w||!h||(w===viewportWidth&&h===viewportHeight))return;viewportWidth=w;viewportHeight=h;renderer.setSize(w,h,false);composer?.setSize(w,h);if(contactAO)contactAO.setSize(Math.round(w*Math.min(devicePixelRatio,1.5)*.7),Math.round(h*Math.min(devicePixelRatio,1.5)*.7));perspective.aspect=w/h;perspective.updateProjectionMatrix();if(camera===orthographic){const half=(orthographic.top-orthographic.bottom)/2;orthographic.left=-half*w/h;orthographic.right=half*w/h;orthographic.updateProjectionMatrix();}if(currentPreset!=='free')fitView(state.view);else syncPostCamera();requestRender();}
 function placeLabel(id,object){
  const el=$(id),anchor=object?.visible?labelAnchor(object.userData.labelBounds,camera,wrap.clientWidth,wrap.clientHeight):null;
  el.style.opacity=anchor?'1':'0';
@@ -220,7 +215,7 @@ function updateLabels(){
  for(const [id,p]of Object.entries(products))placeLabel(p.label,objects.get(id));
 }
 
-function animate(){frameId=0;if(disposed||document.hidden||$('productPicker').open)return;const moved=controls.update();if(kitchenDesign.updateCamera(camera,state.room==='kitchen'))renderer.shadowMap.needsUpdate=true;const drawStarted=performance.now();composer.render();updateLabels();if(params.has('diagnostics')){canvas.dataset.renderedFrames=String(++renderedFrames);recordTiming('renderMs',performance.now()-drawStarted);recordTiming('programs',renderer.info.programs.length);if(changeStarted){recordTiming('changeMs',performance.now()-changeStarted);changeStarted=0;}}if(moved)requestRender();}
+function animate(){frameId=0;if(disposed||document.hidden||$('productPicker').open)return;const moved=controls.update();kitchenDesign.updateCamera(camera,state.room==='kitchen');const drawStarted=performance.now();composer.render();updateLabels();if(params.has('diagnostics')){canvas.dataset.renderedFrames=String(++renderedFrames);recordTiming('renderMs',performance.now()-drawStarted);recordTiming('programs',renderer.info.programs.length);if(changeStarted){recordTiming('changeMs',performance.now()-changeStarted);changeStarted=0;}}if(moved)requestRender();}
 function zoom(factor){if(camera.isOrthographicCamera){camera.zoom=Math.max(.45,Math.min(4,camera.zoom*factor));camera.updateProjectionMatrix();}else{const offset=camera.position.clone().sub(controls.target);offset.multiplyScalar(1/factor).clampLength(.7,11);camera.position.copy(controls.target).add(offset);}currentPreset='free';syncPostCamera();controls.update();updateViewButtons();}
 function back(e){if(parent!==window){e?.preventDefault();parent.postMessage({type:'demiand-close-3d',human:state.human,table:state.table,place:state.place,models:selectionTouched?[...state.selected,...(requested||[]).filter(id=>!products[id])]:undefined},location.origin)}}
 function bindUI(){
@@ -233,7 +228,7 @@ function bindUI(){
  for(const [id,key,value]of [['onTable','place','table'],['onFloor','place','floor'],['kitchenBtn','room','kitchen'],['studioBtn','room','studio']])$(id).addEventListener('click',()=>{state[key]=value;syncScene();});
  for(const [id,view]of [['viewPerspective','perspective'],['viewFront','front'],['viewSide','side']])$(id).addEventListener('click',()=>fitView(view));
  $('fit3d').addEventListener('click',()=>fitView(state.view));$('zoomIn3d').addEventListener('click',()=>zoom(1.18));$('zoomOut3d').addEventListener('click',()=>zoom(1/1.18));
- $('personPosition3d').addEventListener('input',e=>{state.personX=Number(e.target.value)/100;woman?.position.set(state.personX,0,-.60);contactShadows.get('woman')?.position.set(state.personX,.0003,-.60+.065*state.human/164);woman?.updateMatrixWorld(true);renderer.shadowMap.needsUpdate=true;updateMeasurementData();requestRender();});
+ $('personPosition3d').addEventListener('input',e=>{state.personX=Number(e.target.value)/100;woman?.position.set(state.personX,0,-.60);contactShadows.get('woman')?.position.set(state.personX,.0003,-.60+.065*state.human/164);woman?.updateMatrixWorld(true);updateMeasurementData();requestRender();});
  $('reset3d').addEventListener('click',()=>{Object.assign(state,defaults());selectionTouched=true;selectionRevision++;syncScene();renderPicker();loadSelected().then(()=>{syncScene();fitView('perspective')});});
  $('settingsToggle').addEventListener('click',()=>{const on=$('settingsToggle').getAttribute('aria-expanded')!=='true';$('settingsToggle').setAttribute('aria-expanded',String(on));$('settings').classList.toggle('open',on);});
  $('retry3d').addEventListener('click',()=>location.reload());
@@ -242,13 +237,12 @@ function bindUI(){
 function nonBreakingCopy(){const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;while((node=walker.nextNode()))if(!/^(SCRIPT|STYLE)$/.test(node.parentElement?.tagName||''))node.nodeValue=node.nodeValue.replace(/(^|[\s(«])([ВвКкСсУуИиАа]|[Нн]е|[Пп]о|[Нн]а|[Ии]з|[Зз]а|[Дд]ля|[Оо]т|[Дд]о) +(?=[А-ЯЁа-яёA-Za-z0-9«])/gu,'$1$2\u00a0');}
 async function start(){
  try{
-  const modelLoads=loadSelected(),womanLoad=loadGLB('assets/models/woman-fast.glb?v=20261101-33'),interiorLoads=foodInteriors.preload([...state.selected]);
+  const modelLoads=loadSelected(),womanLoad=loadGLB('assets/models/woman-original.glb?v=20261101-28'),interiorLoads=foodInteriors.preload([...state.selected]);
   initRenderer();buildKitchen();makeContactShadow('woman',.42,.34);for(const [id,p]of Object.entries(products)){const label=document.createElement('div');label.id=p.label;label.className='label product-label';label.innerHTML=`<strong>${esc(p.name)}</strong><span>Высота ${fmt(p.height*100)} см</span>`;$('sceneLabels').append(label);}bindUI();syncScene();nonBreakingCopy();resize();
   $('loadingProgress').style.width='30%';
   await Promise.all([kitchenDesign.ready,modelLoads,interiorLoads,(async()=>{normalizeWoman(await womanLoad);})()]);
-  $('loadingProgress').style.width='70%';
-  syncScene();resize();fitView('perspective');kitchenDesign.updateCamera(camera,state.room==='kitchen');
-  $('loadingProgress').style.width='100%';sceneReady=true;pauseRendering();animate();$('loading').classList.add('done');$('loading').setAttribute('aria-hidden','true');setTimeout(()=>$('loading').hidden=true,450);canvas.dataset.ready='true';recordTiming('readyMs',performance.now()-startedAt);
+  $('loadingProgress').style.width='100%';
+  syncScene();resize();fitView('perspective');sceneReady=true;pauseRendering();animate();$('loading').classList.add('done');$('loading').setAttribute('aria-hidden','true');setTimeout(()=>$('loading').hidden=true,450);canvas.dataset.ready='true';recordTiming('readyMs',performance.now()-startedAt);
   new ResizeObserver(resize).observe(wrap);
  }catch(error){console.error('DEMIAND 3D:',error);fail('Не удалось загрузить сцену. Проверьте подключение и попробуйте ещё раз.');}
 }

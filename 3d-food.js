@@ -22,8 +22,8 @@ const chambers={
 export function createFoodInteriors(loader,getEnvironment=()=>null){
  let ready,fruitReady;
  const glowCanvas=document.createElement('canvas');glowCanvas.width=glowCanvas.height=128;const glowContext=glowCanvas.getContext('2d'),glowGradient=glowContext.createRadialGradient(64,44,4,64,60,70);glowGradient.addColorStop(0,'rgba(255,143,48,.72)');glowGradient.addColorStop(.5,'rgba(255,109,20,.38)');glowGradient.addColorStop(1,'rgba(255,90,10,0)');glowContext.fillStyle=glowGradient;glowContext.fillRect(0,0,128,128);const glowMap=new THREE.CanvasTexture(glowCanvas);glowMap.colorSpace=THREE.SRGBColorSpace;
- const template=()=>ready??=(async()=>{const gltf=await loader.loadAsync('./assets/models/food-serving-fast.glb?v=20261101-33');const root=gltf.scene;root.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(root,true),s=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3());root.position.x-=c.x;root.position.y-=b.min.y;root.position.z-=c.z;root.updateMatrixWorld(true);return{root,size:s};})().catch(error=>{ready=undefined;throw error;});
- const fruitTemplate=()=>fruitReady??=loader.loadAsync('./assets/models/fruit-serving-v5.glb?v=20261101-33').then(g=>g.scene).catch(error=>{fruitReady=undefined;throw error;});
+ const template=()=>ready??=(async()=>{const gltf=await loader.loadAsync('./assets/models/food-serving.glb?v=20261101-28');const root=gltf.scene;root.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(root,true),s=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3());root.position.x-=c.x;root.position.y-=b.min.y;root.position.z-=c.z;root.updateMatrixWorld(true);return{root,size:s};})().catch(error=>{ready=undefined;throw error;});
+ const fruitTemplate=()=>fruitReady??=loader.loadAsync('./assets/models/fruit-serving-v4.glb?v=20261101-32').then(g=>g.scene).catch(error=>{fruitReady=undefined;throw error;});
  async function attach(id,group){
   if(id==='1200'||id==='1300'){await attachFruit(group,id);return;}
   const config=chambers[id];if(!config||group.userData.interiorFood)return;

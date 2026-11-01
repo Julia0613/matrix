@@ -196,7 +196,7 @@ for(const [id,key,min,max]of [['humanHeight','human',145,205],['tableHeight','ta
 }
 $('resetSceneBtn').addEventListener('click',resetScene);
 $('open3dBtn').addEventListener('click',()=>{
- const query=new URLSearchParams({rev:'20261101-33',human:String(state.human),table:String(state.table),place:state.place,models:[...state.selected].join(',')});
+ const query=new URLSearchParams({rev:'20261102-34',human:String(state.human),table:String(state.table),place:state.place,models:[...state.selected].join(',')});
  if(location.protocol==='file:'){window.open('https://julia0613.github.io/matrix/3d.html?'+query,'_blank','noopener');return}
  $('threeFrame').src='3d.html?'+query;$('threeDialog').showModal();document.body.classList.add('three-open');
 });
