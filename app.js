@@ -182,6 +182,7 @@ function renderDetail(){
  if(!p.image)notes.push('Фото анфас ещё не добавлено. На сцене показана только габаритная рамка.');
  if(p.view==='three-quarter')notes.push('Рендер в ракурсе ¾. Видимая ширина на изображении может отличаться от ширины корпуса.');
  if(!d)notes.push('Габариты пока не указаны. Модель появится на сцене после уточнения размеров.');
+ if(p.verified===false)notes.push('Размеры сохранены из исходных материалов. Перед точным размещением прибора нужен контрольный замер.');
  if(p.review)notes.push('В карточке сайта и исходной матрице есть расхождение. Использованы значения сайта; требуется контрольный замер.');
  $('detailBody').innerHTML=`<div class="detail-content">${p.image?productPhoto(p,'detail'):'<div class="detail-preview-empty">Ожидаем<br>анфас</div>'}<div class="detail-info"><div class="section-kicker">03 / РАЗМЕРЫ ПРИБОРА</div><div class="detail-title-row"><h2 id="detailTitle">${esc(p.name)}</h2><span class="category-pill">${esc(p.category)}</span></div><p class="detail-sku">${esc(p.sku)}${p.color?' · '+esc(p.color):''}</p></div>${d?`<div class="stats">${[['Ширина',d[1]],['Высота',d[2]],['Глубина',d[0]]].map(([label,value])=>`<div class="stat"><span>${label}</span><strong>${fmt(value)} <small>см</small></strong></div>`).join('')}</div>`:''}</div>${notes.length?`<div class="detail-notes">${notes.map(n=>`<p>${n}</p>`).join('')}</div>`:''}<div class="detail-bottom"><p>${d?'Габариты корпуса · без упаковки':'Модель ожидает уточнения размеров'}</p>${state.selected.has(p.id)?'<button type="button" id="removeDevice">Убрать со сцены ×</button>':''}</div>`;
  keepWordsTogether($('detailBody'));
@@ -195,7 +196,7 @@ for(const [id,key,min,max]of [['humanHeight','human',145,205],['tableHeight','ta
 }
 $('resetSceneBtn').addEventListener('click',resetScene);
 $('open3dBtn').addEventListener('click',()=>{
- const query=new URLSearchParams({human:String(state.human),table:String(state.table),place:state.place,models:[...state.selected].join(',')});
+ const query=new URLSearchParams({rev:'20261101-32',human:String(state.human),table:String(state.table),place:state.place,models:[...state.selected].join(',')});
  if(location.protocol==='file:'){window.open('https://julia0613.github.io/matrix/3d.html?'+query,'_blank','noopener');return}
  $('threeFrame').src='3d.html?'+query;$('threeDialog').showModal();document.body.classList.add('three-open');
 });
