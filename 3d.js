@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import {OrbitControls} from './assets/vendor/OrbitControls.js';
 import {GLTFLoader} from './assets/vendor/GLTFLoader.js';
 import {DRACOLoader} from './assets/vendor/DRACOLoader.js';
-import {createKitchen} from './3d-kitchen.js?v=20261101-28';
-import {createFoodInteriors} from './3d-food.js?v=20261101-29';
+import {createKitchen} from './3d-kitchen.js?v=20261101-30';
+import {createFoodInteriors} from './3d-food.js?v=20261101-30';
 import {EffectComposer} from './assets/vendor/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from './assets/vendor/addons/postprocessing/RenderPass.js';
 import {SSAOPass} from './assets/vendor/addons/postprocessing/SSAOPass.js';
@@ -41,7 +41,7 @@ function initRenderer(){
  const sun=new THREE.DirectionalLight('#fff8f3',1.45);sun.position.set(-3,5,4);sun.castShadow=true;
  sun.shadow.mapSize.set(innerWidth<760?1024:2048,innerWidth<760?1024:2048);sun.shadow.camera.left=-3;sun.shadow.camera.right=3;sun.shadow.camera.top=3;sun.shadow.camera.bottom=-3;sun.shadow.camera.near=.1;sun.shadow.camera.far=12;sun.shadow.normalBias=.0008;sun.shadow.bias=-.00008;sun.shadow.radius=3;scene.add(sun);
  const fill=new THREE.DirectionalLight('#fffaff',.48);fill.position.set(3,3,2);scene.add(fill);
- const pmrem=new THREE.PMREMGenerator(renderer),room=pearlReflectionRoom();environmentTexture=pmrem.fromScene(room,.035).texture;scene.environment=environmentTexture;scene.environmentIntensity=1.2;room.traverse(o=>{o.geometry?.dispose();o.material?.dispose()});pmrem.dispose();
+ const pmrem=new THREE.PMREMGenerator(renderer),room=pearlReflectionRoom();environmentTexture=pmrem.fromScene(room,.035).texture;scene.environment=environmentTexture;scene.environmentIntensity=.6;room.traverse(o=>{o.geometry?.dispose();o.material?.dispose()});pmrem.dispose();
  setupControls();initPostprocessing();
  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();fail('Браузер приостановил 3D. Обновите просмотр, чтобы продолжить.')});
 }
@@ -57,10 +57,10 @@ function pearlReflectionRoom(){
  const room=new THREE.Scene();room.background=new THREE.Color('#38363a');
  const shell=new THREE.Mesh(new THREE.SphereGeometry(10,24,16),new THREE.MeshBasicMaterial({color:'#514f53',side:THREE.BackSide}));room.add(shell);
  function panel(w,h,x,y,z,color,power){const m=new THREE.MeshBasicMaterial({color:new THREE.Color(color).multiplyScalar(power),side:THREE.DoubleSide,toneMapped:false});const p=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);p.position.set(x,y,z);p.lookAt(0,.9,0);room.add(p);}
- panel(2.0,3.3,-4.5,2.2,3.8,'#fff9f5',6.0);panel(1.1,3.5,4.7,2.0,2.1,'#fff7ff',3.5);
+ panel(2.0,3.3,-4.5,2.2,3.8,'#fff9f5',3.2);panel(1.1,3.5,4.7,2.0,2.1,'#fff7ff',2.0);
  panel(2.0,1.3,0,3.3,5.7,'#fff9f7',2.0);panel(4.4,.15,0,2.6,-3.8,'#ffe9d8',3.2);
  panel(3.1,.11,-.5,4.2,0,'#fff4ee',2.8);
- panel(2.2,3.5,-2,-.5,4,'#fff5f2',3.8);panel(.8,3.0,.8,-.4,4.5,'#fff9f7',2.4);
+ panel(2.2,3.5,-2,-.5,4,'#fff5f2',2.1);panel(.8,3.0,.8,-.4,4.5,'#fff9f7',1.5);
  const reflectedFloor=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshBasicMaterial({color:'#ddd6d5',side:THREE.DoubleSide}));reflectedFloor.rotation.x=-Math.PI/2;reflectedFloor.position.y=-3.5;room.add(reflectedFloor);return room;
 }
 function setupControls(){
@@ -74,7 +74,7 @@ function makeContactShadow(id,w,d){
 
  const texture=new THREE.CanvasTexture(c),mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false}));mesh.rotation.x=-Math.PI/2;mesh.renderOrder=1;scene.add(mesh);contactShadows.set(id,mesh);
 }
-function buildKitchen(){kitchenDesign=createKitchen(scene,renderer);kitchen=kitchenDesign.group;island=kitchenDesign.island;ground=kitchenDesign.ground;studioGrid=kitchenDesign.grid;}
+function buildKitchen(){kitchenDesign=createKitchen(scene,renderer,environmentTexture);kitchen=kitchenDesign.group;island=kitchenDesign.island;ground=kitchenDesign.ground;studioGrid=kitchenDesign.grid;}
 function buildIsland(){kitchenDesign.setHeight(state.table/100,state.place==='table');}
 function prepareMeshes(root){root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.isSkinnedMesh)o.frustumCulled=false;}});}
 function normalizeProduct(gltf,id){
@@ -84,7 +84,7 @@ function normalizeProduct(gltf,id){
  object.scale.set(config.width/size.x,config.height/size.y,config.depth/(config.housingDepth||size.z));object.updateMatrixWorld(true);
  const calibratedBox=new THREE.Box3().setFromObject(object,true),center=calibratedBox.getCenter(new THREE.Vector3());
  object.position.x-=center.x;object.position.y-=calibratedBox.min.y;object.position.z-=center.z;object.updateMatrixWorld(true);
- if(id==='2400'){const replacements=new Map();object.traverse(o=>{if(!o.isMesh)return;const fix=m=>{if(m.name!=='Material #72.001')return m;if(replacements.has(m))return replacements.get(m);const glossy=m.clone();glossy.specularIntensity=1;glossy.roughness=.28;glossy.clearcoat=.25;glossy.clearcoatRoughness=.3;glossy.envMap=environmentTexture;glossy.envMapIntensity=1.1;glossy.needsUpdate=true;replacements.set(m,glossy);return glossy;};o.material=Array.isArray(o.material)?o.material.map(fix):fix(o.material);});}
+ if(id==='2400'){const replacements=new Map();object.traverse(o=>{if(!o.isMesh)return;const fix=m=>{if(m.name!=='Material #72.001')return m;if(replacements.has(m))return replacements.get(m);const glossy=m.clone();glossy.specularIntensity=1;glossy.roughness=.28;glossy.clearcoat=.25;glossy.clearcoatRoughness=.3;glossy.envMap=environmentTexture;glossy.envMapIntensity=.65;glossy.needsUpdate=true;replacements.set(m,glossy);return glossy;};o.material=Array.isArray(o.material)?o.material.map(fix):fix(o.material);});}
  const displayName=id==='2200'?'2200 CURRENT Display200 suppliedarchive':id==='2400'?'Material #127.001':null;
  if(displayName){const copies=new Map();object.traverse(o=>{if(!o.isMesh)return;const keepReadable=m=>{if(m.name!==displayName)return m;if(copies.has(m))return copies.get(m);const copy=m.clone();copy.envMap=environmentTexture;copy.envMapIntensity=.12;copy.roughness=.22;copy.needsUpdate=true;copies.set(m,copy);return copy;};o.material=Array.isArray(o.material)?o.material.map(keepReadable):keepReadable(o.material);});}
  const group=new THREE.Group();group.name=config.name;group.add(object);scene.add(group);prepareMeshes(group);objects.set(id,group);

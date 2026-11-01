@@ -21,13 +21,14 @@ const chambers={
 
 export function createFoodInteriors(loader,getEnvironment=()=>null){
  let ready,fruitReady;
+ const glowCanvas=document.createElement('canvas');glowCanvas.width=glowCanvas.height=128;const glowContext=glowCanvas.getContext('2d'),glowGradient=glowContext.createRadialGradient(64,44,4,64,60,70);glowGradient.addColorStop(0,'rgba(255,143,48,.72)');glowGradient.addColorStop(.5,'rgba(255,109,20,.38)');glowGradient.addColorStop(1,'rgba(255,90,10,0)');glowContext.fillStyle=glowGradient;glowContext.fillRect(0,0,128,128);const glowMap=new THREE.CanvasTexture(glowCanvas);glowMap.colorSpace=THREE.SRGBColorSpace;
  const template=()=>ready??=(async()=>{const gltf=await loader.loadAsync('./assets/models/food-serving.glb?v=20261101-28');const root=gltf.scene;root.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(root,true),s=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3());root.position.x-=c.x;root.position.y-=b.min.y;root.position.z-=c.z;root.updateMatrixWorld(true);return{root,size:s};})().catch(error=>{ready=undefined;throw error;});
  async function attach(id,group){
   if(id==='1200'||id==='1300'){await attachFruit(group,id);return;}
   const config=chambers[id];if(!config||group.userData.interiorFood)return;
   const food=await template();const holder=new THREE.Group();holder.name='Food and warm chamber light';
   if(id==='2200'){
-   const liner=new THREE.MeshStandardMaterial({color:'#17191b',roughness:.65,metalness:.12});
+   const liner=new THREE.MeshStandardMaterial({color:'#17191b',roughness:.65,metalness:.12,envMap:getEnvironment(),envMapIntensity:.08});
    const wall=(w,h,d,x,y,z)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),liner);mesh.position.set(x,y,z);mesh.receiveShadow=true;holder.add(mesh);};
    // A closed, dark cooking chamber stops the kitchen showing through the CAD aperture.
    wall(.204,.123,.003,0,.143,-.06);
@@ -38,8 +39,11 @@ export function createFoodInteriors(loader,getEnvironment=()=>null){
   const repaired=new Map();
   group.traverse(mesh=>{if(!mesh.isMesh)return;const fix=material=>{if(!config.glass.includes(material.name))return material;if(repaired.has(material))return repaired.get(material);const m=material.clone();m.metalness=0;m.roughness=.12;m.transparent=true;m.opacity=.16;m.depthWrite=false;m.envMap=getEnvironment();m.envMapIntensity=.35;if('transmission'in m)m.transmission=0;if('clearcoat'in m)m.clearcoat=.18;if('specularIntensity'in m)m.specularIntensity=.65;m.needsUpdate=true;repaired.set(material,m);return m;};mesh.material=Array.isArray(mesh.material)?mesh.material.map(fix):fix(mesh.material);});
   for(const chamber of config.servings){
-   const portion=new THREE.Group(),copy=food.root.clone(true),scale=chamber.width/food.size.x;portion.add(copy);portion.scale.setScalar(scale);portion.position.set(chamber.x,chamber.y,chamber.front-food.size.z*scale/2);portion.name='Grilled serving';portion.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});holder.add(portion);
-   const lamp=new THREE.PointLight('#ffb56b',.18*scale*scale,.24*scale,2);lamp.position.set(chamber.x,chamber.y+food.size.y*scale+.022,chamber.front-.015);holder.add(lamp);
+   const portion=new THREE.Group(),copy=food.root.clone(true),scale=chamber.width/food.size.x;portion.add(copy);portion.scale.setScalar(scale);portion.position.set(chamber.x,chamber.y,chamber.front-food.size.z*scale/2);portion.name='Grilled serving';portion.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;const warm=m=>{const mat=m.clone();mat.envMap=getEnvironment();mat.envMapIntensity=.14;return mat;};o.material=Array.isArray(o.material)?o.material.map(warm):warm(o.material);}});holder.add(portion);
+   // A saturated, local oven lamp stays orange instead of clipping to a white spot.
+   const lamp=new THREE.PointLight('#ff791e',.14*scale*scale,.27*scale,2);lamp.position.set(chamber.x,chamber.y+food.size.y*scale+.025,chamber.front-.025);holder.add(lamp);
+   const bounce=new THREE.PointLight('#ff9b38',.025*scale*scale,.22*scale,2);bounce.position.set(chamber.x-chamber.width*.3,chamber.y+.04*scale,chamber.front-.055*scale);holder.add(bounce);
+   const glow=new THREE.Mesh(new THREE.PlaneGeometry(chamber.width*1.2,food.size.y*scale*2.1),new THREE.MeshBasicMaterial({map:glowMap,transparent:true,depthWrite:false,toneMapped:false,opacity:.85}));glow.name='Orange oven light on rear chamber wall';glow.position.set(chamber.x,chamber.y+food.size.y*scale*.85,chamber.front-food.size.z*scale-.002);holder.add(glow);
   }
   group.add(holder);group.userData.interiorFood={chambers:config.servings.length,visibleThroughWindow:!config.opaque};
  }
