@@ -24,7 +24,7 @@ export function createKitchen(scene,renderer,environmentTexture){
  const ground=new THREE.Mesh(new THREE.PlaneGeometry(12,12),floorMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.0001;ground.receiveShadow=true;scene.add(ground);
  const reflectionShader={...Reflector.ReflectorShader,uniforms:THREE.UniformsUtils.clone(Reflector.ReflectorShader.uniforms)};
  reflectionShader.fragmentShader=reflectionShader.fragmentShader.replace('vec4 base = texture2DProj( tDiffuse, vUv );',`vec2 uv=vUv.xy/vUv.w;vec2 blur=vec2(1.7/512.0);vec4 base=texture2D(tDiffuse,uv)*0.40; base+=(texture2D(tDiffuse,uv+vec2(blur.x,0.0))+texture2D(tDiffuse,uv-vec2(blur.x,0.0))+texture2D(tDiffuse,uv+vec2(0.0,blur.y))+texture2D(tDiffuse,uv-vec2(0.0,blur.y)))*0.15;`).replace('vec4( blendOverlay( base.rgb, color ), 1.0 )','vec4( base.rgb, 0.17 )');
- const floorReflection=new Reflector(new THREE.PlaneGeometry(12,12),{textureWidth:512,textureHeight:512,clipBias:.0005,multisample:0,shader:reflectionShader});floorReflection.rotation.x=-Math.PI/2;floorReflection.position.y=.0001;floorReflection.material.transparent=true;floorReflection.material.depthWrite=false;scene.add(floorReflection);
+ const floorReflection=new Reflector(new THREE.PlaneGeometry(12,12),{textureWidth:innerWidth<760?256:512,textureHeight:innerWidth<760?256:512,clipBias:.0005,multisample:0,shader:reflectionShader});floorReflection.rotation.x=-Math.PI/2;floorReflection.position.y=.0001;floorReflection.material.transparent=true;floorReflection.material.depthWrite=false;scene.add(floorReflection);
  const topShader={...reflectionShader,uniforms:THREE.UniformsUtils.clone(reflectionShader.uniforms),fragmentShader:reflectionShader.fragmentShader.replace('vec4( base.rgb, 0.17 )','vec4( base.rgb, 0.18 )')};
  const topReflection=new Reflector(new THREE.PlaneGeometry(1.94,.80),{textureWidth:innerWidth<760?256:512,textureHeight:innerWidth<760?256:512,clipBias:.0004,multisample:0,shader:topShader});topReflection.rotation.x=-Math.PI/2;topReflection.position.set(.30,.7603,0);topReflection.material.transparent=true;topReflection.material.depthWrite=false;island.add(topReflection);
  let reflecting=false;for(const mirror of [floorReflection,topReflection]){const render=mirror.onBeforeRender.bind(mirror);mirror.onBeforeRender=(renderer,scene,camera,...rest)=>{if(reflecting||scene.overrideMaterial)return;reflecting=true;const other=mirror===floorReflection?topReflection:floorReflection,visible=other.visible;other.visible=false;try{render(renderer,scene,camera,...rest);}finally{other.visible=visible;reflecting=false;}};}
@@ -157,8 +157,10 @@ export function createKitchen(scene,renderer,environmentTexture){
  function setEnvironment(on){group.visible=on;lighting.visible=on;ground.material=on?floorMat:studioMat;grid.visible=!on;}
  function updateCamera(camera,on){
   floorReflection.visible=on&&camera.isPerspectiveCamera;topReflection.visible=camera.isPerspectiveCamera;
+  const wasBack=back.visible,wasEnds=ends.visible,wasPendants=pendants.visible;
   // The rear joinery disappears from reverse viewpoints instead of blocking the appliances.
   const open=on&&camera.position.z>-.95;back.visible=open;ends.visible=open&&Math.abs(camera.position.x)<3.6;pendants.visible=open&&camera.position.y<2.45;
+  return wasBack!==back.visible||wasEnds!==ends.visible||wasPendants!==pendants.visible;
  }
  return {group,island,ground,grid,setHeight,setEnvironment,updateCamera,ready,dispose(){floorReflection.dispose();topReflection.dispose();}};
 }

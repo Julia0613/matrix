@@ -1,4 +1,13 @@
 window.MODELS_3D = {
+  "1200": {
+    "path": "assets/models/1200-studio.glb",
+    "rotationY": 0,
+    "housingDepth": 0.202
+  },
+  "1300": {
+    "path": "assets/models/1300.glb",
+    "rotationY": 0
+  },
   "1416": {
     "path": "assets/models/1416.glb",
     "rotationY": 0
@@ -8,11 +17,11 @@ window.MODELS_3D = {
     "rotationY": 0
   },
   "2100": {
-    "path": "assets/models/2100-studio.glb",
+    "path": "assets/models/2100-studio-fast-v33.glb",
     "rotationY": 0
   },
   "2200": {
-    "path": "assets/models/2200-studio-v4.glb",
+    "path": "assets/models/2200-studio-v4-fast-v33.glb",
     "rotationY": 0
   },
   "2300": {
@@ -36,6 +45,24 @@ window.MODELS_3D = {
     "path": "assets/models/2700-studio.glb",
     "rotationY": 0
   },
+  "2900": {
+    "path": "assets/models/2900-window.glb",
+    "rotationY": 0
+  },
+  "3100": {
+    "path": "assets/models/3100.glb",
+    "rotationY": 0,
+    "housingDepth": 0.29
+  },
+  "3200": {
+    "path": "assets/models/3200.glb",
+    "rotationY": 0,
+    "housingDepth": 0.29108601808547974
+  },
+  "3500": {
+    "path": "assets/models/rivo-3500.glb",
+    "housingDepth": 0.32365
+  },
   "5100": {
     "path": "assets/models/harrington-5100.glb"
   },
@@ -49,33 +76,6 @@ window.MODELS_3D = {
   },
   "DO-E1000": {
     "path": "assets/models/DO-E1000.glb",
-    "rotationY": 0
-  },
-  "3200": {
-    "path": "assets/models/3200.glb",
-    "rotationY": 0,
-    "housingDepth": 0.29108601808547974
-  },
-  "3500": {
-    "path": "assets/models/rivo-3500.glb",
-    "housingDepth": 0.32365
-  },
-  "1200": {
-    "path": "assets/models/1200-studio.glb",
-    "rotationY": 0,
-    "housingDepth": 0.202
-  },
-  "2900": {
-    "path": "assets/models/2900-window.glb",
-    "rotationY": 0
-  },
-  "3100": {
-    "path": "assets/models/3100.glb",
-    "rotationY": 0,
-    "housingDepth": 0.29
-  },
-  "1300": {
-    "path": "assets/models/1300.glb",
     "rotationY": 0
   }
 };

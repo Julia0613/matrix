@@ -22,7 +22,8 @@ const chambers={
 export function createFoodInteriors(loader,getEnvironment=()=>null){
  let ready,fruitReady;
  const glowCanvas=document.createElement('canvas');glowCanvas.width=glowCanvas.height=128;const glowContext=glowCanvas.getContext('2d'),glowGradient=glowContext.createRadialGradient(64,44,4,64,60,70);glowGradient.addColorStop(0,'rgba(255,143,48,.72)');glowGradient.addColorStop(.5,'rgba(255,109,20,.38)');glowGradient.addColorStop(1,'rgba(255,90,10,0)');glowContext.fillStyle=glowGradient;glowContext.fillRect(0,0,128,128);const glowMap=new THREE.CanvasTexture(glowCanvas);glowMap.colorSpace=THREE.SRGBColorSpace;
- const template=()=>ready??=(async()=>{const gltf=await loader.loadAsync('./assets/models/food-serving.glb?v=20261101-28');const root=gltf.scene;root.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(root,true),s=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3());root.position.x-=c.x;root.position.y-=b.min.y;root.position.z-=c.z;root.updateMatrixWorld(true);return{root,size:s};})().catch(error=>{ready=undefined;throw error;});
+ const template=()=>ready??=(async()=>{const gltf=await loader.loadAsync('./assets/models/food-serving-fast.glb?v=20261101-33');const root=gltf.scene;root.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(root,true),s=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3());root.position.x-=c.x;root.position.y-=b.min.y;root.position.z-=c.z;root.updateMatrixWorld(true);return{root,size:s};})().catch(error=>{ready=undefined;throw error;});
+ const fruitTemplate=()=>fruitReady??=loader.loadAsync('./assets/models/fruit-serving-v5.glb?v=20261101-33').then(g=>g.scene).catch(error=>{fruitReady=undefined;throw error;});
  async function attach(id,group){
   if(id==='1200'||id==='1300'){await attachFruit(group,id);return;}
   const config=chambers[id];if(!config||group.userData.interiorFood)return;
@@ -51,7 +52,7 @@ export function createFoodInteriors(loader,getEnvironment=()=>null){
   if(group.userData.interiorFood)return;
   const profile=id==='1200'?{glass:['Стекло'],portions:[{x:.00054,y:.2735,z:-.01506,scale:1,rotation:0}]}:{glass:['glass','glass accent'],portions:[{x:0,y:.194,z:-.0278755,scale:.735,rotation:0},{x:0,y:.2525,z:-.0278755,scale:.9,rotation:Math.PI}]};
   group.traverse(mesh=>{if(!mesh.isMesh)return;const clear=m=>{if(!profile.glass.includes(m.name))return m;const copy=m.clone();copy.color.set('#f6f3f1');copy.metalness=0;copy.roughness=.06;copy.transparent=true;copy.opacity=.055;if('transmission'in copy)copy.transmission=0;copy.depthWrite=false;copy.side=THREE.FrontSide;copy.envMap=getEnvironment();copy.envMapIntensity=.18;return copy;};mesh.material=Array.isArray(mesh.material)?mesh.material.map(clear):clear(mesh.material);const list=Array.isArray(mesh.material)?mesh.material:[mesh.material];if(list.every(m=>m.transparent))mesh.castShadow=false;});
-  const root=await(fruitReady??=loader.loadAsync('./assets/models/fruit-serving-v4.glb?v=20261101-32').then(g=>g.scene).catch(error=>{fruitReady=undefined;throw error;}));
+  const root=await fruitTemplate();
   for(const placement of profile.portions){const fruit=root.clone(true);fruit.name='Strawberry, blueberry and banana pieces';fruit.position.set(placement.x,placement.y,placement.z);fruit.scale.setScalar(placement.scale);fruit.rotation.y=placement.rotation;fruit.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;const juicy=m=>{const copy=m.clone();copy.envMap=getEnvironment();copy.envMapIntensity=1.6;copy.roughness=Math.min(copy.roughness,.40);return copy;};o.material=Array.isArray(o.material)?o.material.map(juicy):juicy(o.material);}});group.add(fruit);}
   if(id==='1200'){
   const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');ctx.strokeStyle='#d8ebff';ctx.lineWidth=7;ctx.lineCap='round';
@@ -60,5 +61,5 @@ export function createFoodInteriors(loader,getEnvironment=()=>null){
   const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const timer=new THREE.Mesh(new THREE.PlaneGeometry(.062535,.01707),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,toneMapped:false}));timer.name='DeMixi display 00:00';timer.position.set(.0019206,.1231938,.07135);timer.rotation.x=-1.75*Math.PI/180;group.add(timer);}
   group.userData.interiorFood={fruit:true,portions:profile.portions.length,...(id==='1200'?{timer:'00:00'}:{})};
  }
- return{attach};
+ return{attach,preload(ids){const tasks=[];if(ids.some(id=>chambers[id]))tasks.push(template());if(ids.some(id=>id==='1200'||id==='1300'))tasks.push(fruitTemplate());return Promise.allSettled(tasks);}};
 }
